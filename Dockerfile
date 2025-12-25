@@ -1,11 +1,15 @@
-# Giai đoạn 1: Build ứng dụng
-FROM maven:3.8.5-openjdk-17 AS build
+# Stage 1: Build
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
-COPY . .
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+COPY src ./src
 RUN mvn clean package -DskipTests
 
-# Giai đoạn 2: Chạy ứng dụng
-FROM openjdk:17-jdk-slim
+# Stage 2: Run
+FROM eclipse-temurin:21-jre-jammy
+WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","app.jar"]
+# Cấu hình tối ưu RAM cho gói free của Render
+ENTRYPOINT ["java", "-Xmx512m", "-Xms256m", "-jar", "app.jar"]
