@@ -5,47 +5,44 @@ import com.example.foodreview.service.FoodService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/foods")
 @RequiredArgsConstructor
-@CrossOrigin // Cho phép Frontend gọi API
+@CrossOrigin(origins = "*") // Cho phép React gọi API không bị chặn
 public class FoodController {
 
     private final FoodService foodService;
 
-    // 1. API cho ADMIN (Phân trang, quản lý)
+    // API Lấy danh sách món ăn (Hỗ trợ phân trang & tìm kiếm)
+    // React gọi: /api/foods?page=0&size=4&search=bún
     @GetMapping
     public ResponseEntity<Page<FoodDTO>> getAll(
-            @RequestParam(required = false, defaultValue = "") String search,
-            Pageable pageable
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long categoryId,
+            // @PageableDefault: Nếu React không gửi page/size, mặc định lấy trang 0, 10 món, sắp xếp mới nhất
+            @PageableDefault(size = 10, page = 0, sort = "id", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(foodService.getAllFoods(search, pageable));
+        return ResponseEntity.ok(foodService.getAllFoods(search, categoryId, pageable));
     }
 
-    // --- 👇 2. API CHO USER SEARCH (MỚI THÊM) 👇 ---
-    // URL: /api/foods/search?cat=1&q=pho
-    @GetMapping("/search")
-    public ResponseEntity<List<FoodDTO>> searchFoods(
-            @RequestParam(required = false) Long cat,  // Nhận param 'cat' từ URL
-            @RequestParam(required = false) String q   // Nhận param 'q' từ URL
+    // API Lấy danh sách món theo Nhà Hàng (Hỗ trợ phân trang)
+    @GetMapping("/restaurant/{restaurantId}")
+    public ResponseEntity<Page<FoodDTO>> getByRestaurant(
+            @PathVariable Long restaurantId,
+            @PageableDefault(size = 10, page = 0) Pageable pageable
     ) {
-        return ResponseEntity.ok(foodService.searchFoods(cat, q));
+        return ResponseEntity.ok(foodService.getByRestaurant(restaurantId, pageable));
     }
-    // ------------------------------------------------
 
+    // ... Các API create, update, delete, getById giữ nguyên
     @GetMapping("/{id}")
     public ResponseEntity<FoodDTO> getById(@PathVariable Long id) {
         return ResponseEntity.ok(foodService.getById(id));
-    }
-
-    @GetMapping("/restaurant/{restaurantId}")
-    public ResponseEntity<List<FoodDTO>> getByRestaurant(@PathVariable Long restaurantId) {
-        return ResponseEntity.ok(foodService.getByRestaurant(restaurantId));
     }
 
     @PostMapping

@@ -8,7 +8,7 @@ import com.example.foodreview.repository.VoucherRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate; // <--- NHỚ IMPORT CÁI NÀY
+import java.time.LocalDateTime; // ✅ SỬA: Dùng LocalDateTime để khớp với Entity
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,6 +37,10 @@ public class VoucherService {
         validateVoucherLogic(dto); // Validate
 
         Voucher voucher = voucherMapper.toEntity(dto);
+        // Set mặc định ngày tạo nếu chưa có
+        if (voucher.getStartDate() == null) voucher.setStartDate(LocalDateTime.now());
+        if (voucher.getEndDate() == null) voucher.setEndDate(LocalDateTime.now().plusDays(7)); // Mặc định 7 ngày
+
         Voucher savedVoucher = voucherRepository.save(voucher);
         return voucherMapper.toDTO(savedVoucher);
     }
@@ -58,13 +62,13 @@ public class VoucherService {
         voucherRepository.deleteById(id);
     }
 
-    // --- 5. HÀM MỚI: CHECK MÃ CHO GIỎ HÀNG ---
+    // --- 5. CHECK MÃ CHO GIỎ HÀNG ---
     public VoucherDTO checkVoucherValid(String code) {
-        // Tìm voucher theo code (Cần thêm findByCode vào Repository)
         Voucher voucher = voucherRepository.findByCode(code)
                 .orElseThrow(() -> new RuntimeException("Mã giảm giá không tồn tại!"));
 
-        LocalDate now = LocalDate.now();
+        // ✅ SỬA: Dùng LocalDateTime.now()
+        LocalDateTime now = LocalDateTime.now();
 
         // Kiểm tra ngày bắt đầu
         if (voucher.getStartDate().isAfter(now)) {
@@ -80,13 +84,17 @@ public class VoucherService {
 
     // --- VALIDATE LOGIC ---
     private void validateVoucherLogic(VoucherDTO dto) {
-        if (dto.getType() == VoucherType.POINT_EXCHANGE || dto.getType() == VoucherType.REWARD_ORDER) {
+        // Kiểm tra loại voucher cần điều kiện đổi
+        if (dto.getType() == VoucherType.POINT_EXCHANGE) {
             if (dto.getConditionValue() == null || dto.getConditionValue() <= 0) {
-                throw new RuntimeException("Loại Voucher này yêu cầu nhập 'Giá trị điều kiện' (Điểm/Tiền) lớn hơn 0!");
+                throw new RuntimeException("Voucher đổi điểm yêu cầu nhập số điểm (Condition Value) > 0!");
             }
         }
+        
+        // ✅ SỬA: Nếu không chọn loại, mặc định là DISCOUNT (Giảm giá thường)
+        // (Vì trong Enum chúng ta không có PUBLIC)
         if (dto.getType() == null) {
-            dto.setType(VoucherType.PUBLIC);
+            dto.setType(VoucherType.DISCOUNT);
         }
     }
 }

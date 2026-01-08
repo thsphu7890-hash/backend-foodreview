@@ -12,4 +12,5 @@ import java.util.List;
 public interface UserVoucherRepository extends JpaRepository<UserVoucher, Long> {
     // Tìm voucher của user mà chưa sử dụng
     List<UserVoucher> findByUserIdAndIsUsedFalse(Long userId);
+   
 }

@@ -1,37 +1,46 @@
 package com.example.foodreview.mapper;
 
 import com.example.foodreview.dto.CategoryDTO;
-// SỬA TẠI ĐÂY: Import đúng Model Category của bạn
-import com.example.foodreview.model.Category; 
+import com.example.foodreview.model.Category;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component // Đánh dấu để Spring Boot tự động nạp (Inject) vào Service
 public class CategoryMapper {
 
-    // Chuyển từ Entity sang DTO để trả về cho Client
-    public CategoryDTO toDTO(Category entity) {
-        if (entity == null) return null;
+    // 1. Chuyển từ Entity -> DTO (Để trả về cho Frontend)
+    public CategoryDTO toDTO(Category category) {
+        if (category == null) {
+            return null;
+        }
 
         CategoryDTO dto = new CategoryDTO();
-        dto.setId(entity.getId());
-        dto.setName(entity.getName());
+        dto.setId(category.getId());
+        dto.setName(category.getName());
+        // Map thêm các trường khác nếu có
         return dto;
     }
 
-    // Chuyển từ DTO sang Entity để lưu vào Database
+    // 2. Chuyển từ DTO -> Entity (Để tạo mới)
     public Category toEntity(CategoryDTO dto) {
-        if (dto == null) return null;
+        if (dto == null) {
+            return null;
+        }
 
-        Category entity = new Category();
-        // Lưu ý: Thường ID sẽ tự tăng nên không set ID khi tạo mới
-        entity.setName(dto.getName());
-        return entity;
+        Category category = new Category();
+        // Không set ID vì khi tạo mới ID tự tăng
+        category.setName(dto.getName());
+        return category;
     }
 
-    // Cập nhật dữ liệu từ DTO vào Entity đã tồn tại
+    // 3. Update dữ liệu từ DTO vào Entity có sẵn (Dùng cho hàm Update)
     public void updateEntity(Category entity, CategoryDTO dto) {
-        if (entity == null || dto == null) return;
+        if (dto == null || entity == null) {
+            return;
+        }
 
-        entity.setName(dto.getName());
+        // Chỉ cập nhật các trường thông tin, TUYỆT ĐỐI KHÔNG cập nhật ID
+        if (dto.getName() != null) {
+            entity.setName(dto.getName());
+        }
     }
 }

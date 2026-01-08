@@ -15,8 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.HashSet; // Import Set
+import java.util.List;    // Import List
 
 @Service
 @RequiredArgsConstructor
@@ -27,70 +27,59 @@ public class FoodService {
     private final CategoryRepository categoryRepo;
     private final FoodMapper mapper;
 
-    // --- 1. ADMIN: Lấy tất cả (Phân trang) ---
+    // 1. LẤY DANH SÁCH (Đã cập nhật tên hàm Repository)
     @Transactional(readOnly = true)
-    public Page<FoodDTO> getAllFoods(String search, Pageable pageable) {
-        if (search != null && !search.isEmpty()) {
-            return foodRepo.findByNameContainingIgnoreCase(search, pageable).map(mapper::toDTO);
-        }
-        return foodRepo.findAll(pageable).map(mapper::toDTO);
-    }
+    public Page<FoodDTO> getAllFoods(String search, Long categoryId, Pageable pageable) {
+        Page<Food> pageResult;
 
-    // --- 2. USER: Tìm kiếm (Đã sửa tên hàm gọi Repo) ---
-    @Transactional(readOnly = true)
-    public List<FoodDTO> searchFoods(Long categoryId, String keyword) {
-        List<Food> foods;
-
-        if (categoryId != null && keyword != null && !keyword.isEmpty()) {
-            // Sửa: findByCategoryId -> findByCategory_Id
-            foods = foodRepo.findByCategory_IdAndNameContainingIgnoreCase(categoryId, keyword);
+        if (categoryId != null && search != null && !search.isEmpty()) {
+            // Sửa: findByCategory_Id -> findByCategories_Id
+            pageResult = foodRepo.findByCategories_IdAndNameContainingIgnoreCase(categoryId, search, pageable);
         } else if (categoryId != null) {
-            // Sửa: findByCategoryId -> findByCategory_Id
-            foods = foodRepo.findByCategory_Id(categoryId);
-        } else if (keyword != null && !keyword.isEmpty()) {
-            foods = foodRepo.findByNameContainingIgnoreCase(keyword);
+            // Sửa: findByCategory_Id -> findByCategories_Id
+            pageResult = foodRepo.findByCategories_Id(categoryId, pageable);
+        } else if (search != null && !search.isEmpty()) {
+            pageResult = foodRepo.findByNameContainingIgnoreCase(search, pageable);
         } else {
-            foods = foodRepo.findAll();
+            pageResult = foodRepo.findAll(pageable);
         }
 
-        return foods.stream().map(mapper::toDTO).collect(Collectors.toList());
+        return pageResult.map(mapper::toDTO);
     }
 
+    @Transactional(readOnly = true)
+    public Page<FoodDTO> getByRestaurant(Long restaurantId, Pageable pageable) {
+        return foodRepo.findByRestaurant_Id(restaurantId, pageable).map(mapper::toDTO);
+    }
+    
     @Transactional(readOnly = true)
     public FoodDTO getById(Long id) {
         Food food = foodRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy món ăn"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy món ăn: " + id));
         return mapper.toDTO(food);
     }
 
-    @Transactional(readOnly = true)
-    public List<FoodDTO> getByRestaurant(Long restaurantId) {
-        // Gọi hàm đã sửa tên trong Repo
-        return foodRepo.findByRestaurant_Id(restaurantId).stream()
-                .map(mapper::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    // --- 3. CREATE ---
+    // --- 2. TẠO MỚI (Xử lý nhiều danh mục) ---
     @Transactional
     public FoodDTO create(FoodDTO dto) {
         Restaurant restaurant = restaurantRepo.findById(dto.getRestaurantId())
                 .orElseThrow(() -> new ResourceNotFoundException("Nhà hàng không tồn tại"));
         
+        // Mapper chuyển đổi cơ bản (Tên, giá, mô tả, ảnh, video...)
         Food food = mapper.toEntity(dto);
         food.setRestaurant(restaurant);
 
-        // Lưu Category
-        if (dto.getCategoryId() != null) {
-            Category category = categoryRepo.findById(dto.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Danh mục không tồn tại"));
-            food.setCategory(category);
+        // 👇 XỬ LÝ LƯU DANH SÁCH CATEGORY 👇
+        if (dto.getCategoryIds() != null && !dto.getCategoryIds().isEmpty()) {
+            List<Category> categories = categoryRepo.findAllById(dto.getCategoryIds());
+            food.setCategories(new HashSet<>(categories));
         }
-        
+        // -----------------------------------
+
         return mapper.toDTO(foodRepo.save(food));
     }
 
-    // --- 4. UPDATE ---
+    // --- 3. CẬP NHẬT (Xử lý nhiều danh mục) ---
     @Transactional
     public FoodDTO update(Long id, FoodDTO dto) {
         Food food = foodRepo.findById(id)
@@ -100,35 +89,30 @@ public class FoodService {
         if (dto.getPrice() != null) food.setPrice(dto.getPrice());
         if (dto.getImage() != null) food.setImage(dto.getImage());
         if (dto.getDescription() != null) food.setDescription(dto.getDescription());
-        
-        // Cập nhật Nhà hàng
+        if (dto.getVideo() != null) food.setVideo(dto.getVideo());
+
+        // Cập nhật nhà hàng nếu có thay đổi
         if (dto.getRestaurantId() != null) {
-            Long currentResId = (food.getRestaurant() != null) ? food.getRestaurant().getId() : null;
-            if (!dto.getRestaurantId().equals(currentResId)) {
-                Restaurant restaurant = restaurantRepo.findById(dto.getRestaurantId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Nhà hàng mới không tồn tại"));
-                food.setRestaurant(restaurant);
-            }
+             Restaurant r = restaurantRepo.findById(dto.getRestaurantId())
+                     .orElseThrow(() -> new ResourceNotFoundException("Nhà hàng không tồn tại"));
+             food.setRestaurant(r);
         }
 
-        // Cập nhật Category
-        if (dto.getCategoryId() != null) {
-            Long currentCatId = (food.getCategory() != null) ? food.getCategory().getId() : null;
-            if (!dto.getCategoryId().equals(currentCatId)) {
-                Category category = categoryRepo.findById(dto.getCategoryId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Danh mục không tồn tại"));
-                food.setCategory(category);
-            }
+        // 👇 XỬ LÝ CẬP NHẬT DANH SÁCH CATEGORY 👇
+        if (dto.getCategoryIds() != null) {
+            // Tìm tất cả category theo list ID mới
+            List<Category> categories = categoryRepo.findAllById(dto.getCategoryIds());
+            // Thay thế hoàn toàn danh sách cũ bằng danh sách mới
+            food.setCategories(new HashSet<>(categories));
         }
-        
+        // ----------------------------------------
+
         return mapper.toDTO(foodRepo.save(food));
     }
 
     @Transactional
     public void delete(Long id) {
-        if (!foodRepo.existsById(id)) {
-            throw new ResourceNotFoundException("Không tìm thấy món ăn để xóa");
-        }
+        if (!foodRepo.existsById(id)) throw new ResourceNotFoundException("Không tìm thấy món ăn");
         foodRepo.deleteById(id);
     }
 }

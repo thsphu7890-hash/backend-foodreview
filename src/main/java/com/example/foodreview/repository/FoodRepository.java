@@ -4,27 +4,32 @@ import com.example.foodreview.model.Food;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query; // Import Query
+import org.springframework.data.repository.query.Param; // Import Param
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import java.util.List; // Import List
 
 @Repository
 public interface FoodRepository extends JpaRepository<Food, Long> {
+    
+    // --- 1. CÁC HÀM CHO APP (REACT) ---
 
-    // Tìm theo Restaurant ID (Thêm _ cho chuẩn, hoặc giữ nguyên nếu Entity Restaurant có field id)
-    List<Food> findByRestaurant_Id(Long restaurantId);
-
-    // --- SỬA CÁC HÀM NÀY (Thêm dấu _ trước Id) ---
-
-    // 1. Tìm theo Category ID
-    List<Food> findByCategory_Id(Long categoryId);
-
-    // 2. Tìm theo Tên
-    List<Food> findByNameContainingIgnoreCase(String name);
-
-    // 3. Tìm kết hợp Category + Tên
-    List<Food> findByCategory_IdAndNameContainingIgnoreCase(Long categoryId, String name);
-
-    // 4. Admin Phân trang
+    // Tìm theo Tên
     Page<Food> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+    // Tìm theo Danh mục (Lưu ý: Categories số nhiều do quan hệ Many-to-Many)
+    Page<Food> findByCategories_Id(Long categoryId, Pageable pageable);
+
+    // Tìm theo Danh mục VÀ Tên
+    Page<Food> findByCategories_IdAndNameContainingIgnoreCase(Long categoryId, String name, Pageable pageable);
+    
+    // Tìm theo Nhà hàng
+    Page<Food> findByRestaurant_Id(Long restaurantId, Pageable pageable);
+
+    // --- 2. HÀM CHO BOT (n8n/AI) ---
+    // Hàm này giúp Bot tìm kiếm gần đúng theo tên món ăn
+    // Chúng ta dùng @Query để tối ưu và không bị phụ thuộc vào tên hàm dài ngoằng
+    @Query("SELECT f FROM Food f WHERE LOWER(f.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    List<Food> searchFoodForBot(@Param("keyword") String keyword, Pageable pageable);
 }

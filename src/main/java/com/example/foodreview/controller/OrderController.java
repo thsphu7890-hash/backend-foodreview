@@ -1,66 +1,74 @@
 package com.example.foodreview.controller;
 
 import com.example.foodreview.dto.OrderDTO;
+import com.example.foodreview.model.User;
 import com.example.foodreview.service.OrderService;
-import lombok.RequiredArgsConstructor;
+import com.example.foodreview.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/orders")
-@RequiredArgsConstructor
-@CrossOrigin // Cho phép Frontend gọi API
+@CrossOrigin(origins = "http://localhost:5173")
 public class OrderController {
 
-    private final OrderService orderService;
+    @Autowired
+    private OrderService orderService;
 
-    // --- DÀNH CHO NGƯỜI DÙNG (USER) ---
+    @Autowired
+    private UserService userService;
 
-    // 1. Tạo đơn hàng mới
+    // --- 1. LẤY LỊCH SỬ CỦA TÔI (User thường dùng) ---
+    @GetMapping("/my-orders")
+    @PreAuthorize("hasAnyRole('USER', 'DRIVER', 'ADMIN')")
+    public ResponseEntity<List<OrderDTO>> getMyOrders(Authentication authentication) {
+        String username = authentication.getName();
+        User user = userService.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        return ResponseEntity.ok(orderService.getOrdersByUser(user.getId()));
+    }
+
+    // --- 2. XEM CHI TIẾT ---
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'DRIVER', 'ADMIN')")
+    public ResponseEntity<?> getOrderById(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(orderService.getOrderById(id));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Không tìm thấy đơn hàng");
+        }
+    }
+
+    // --- 3. TẠO ĐƠN ---
     @PostMapping
-    public ResponseEntity<OrderDTO> createOrder(@RequestBody OrderDTO orderDTO) {
-        return ResponseEntity.ok(orderService.createOrder(orderDTO));
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<OrderDTO> createOrder(@RequestBody OrderDTO orderRequest, Authentication authentication) {
+        String username = authentication.getName();
+        User user = userService.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        orderRequest.setUserId(user.getId());
+        return ResponseEntity.ok(orderService.createOrder(orderRequest));
     }
 
-    // 2. Lấy lịch sử đơn hàng của một người dùng
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<OrderDTO>> getOrdersByUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(orderService.getOrdersByUser(userId));
-    }
-
-    // 3. Người dùng tự hủy đơn (Chỉ khi đang PENDING)
+    // --- 4. HỦY ĐƠN ---
     @PutMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<OrderDTO> cancelOrder(@PathVariable Long id) {
         return ResponseEntity.ok(orderService.cancelOrder(id));
     }
 
-
-    // --- DÀNH CHO QUẢN TRỊ VIÊN (ADMIN) ---
-
-    // 4. Lấy tất cả đơn hàng hệ thống (Hiển thị trong OrderManager.jsx)
+    // --- 5. 👇 QUAN TRỌNG: LẤY TẤT CẢ ĐƠN (Dành cho Admin/Manager) ---
+    // Đây là cái bạn đang thiếu!
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'DRIVER')") // Chỉ Admin hoặc Driver mới được xem hết
     public ResponseEntity<List<OrderDTO>> getAllOrders() {
         return ResponseEntity.ok(orderService.getAllOrders());
-    }
-
-    // 5. Cập nhật trạng thái đơn hàng (Duyệt, Giao hàng, Hoàn thành)
-    @PutMapping("/{id}/status")
-    public ResponseEntity<OrderDTO> updateStatus(
-            @PathVariable Long id, 
-            @RequestParam String status
-    ) {
-        return ResponseEntity.ok(orderService.updateStatus(id, status));
-    }
-
-    // 🔥 6. ADMIN CHỈ ĐỊNH TÀI XẾ CHO ĐƠN HÀNG (MỚI THÊM) 🔥
-    // API: PUT /api/orders/{orderId}/assign-driver/{driverId}
-    @PutMapping("/{orderId}/assign-driver/{driverId}")
-    public ResponseEntity<OrderDTO> assignDriver(
-            @PathVariable Long orderId, 
-            @PathVariable Long driverId
-    ) {
-        return ResponseEntity.ok(orderService.assignDriver(orderId, driverId));
     }
 }

@@ -1,8 +1,8 @@
 package com.example.foodreview.dto;
 
-import com.example.foodreview.model.VoucherType; // Import Enum
+import com.example.foodreview.model.VoucherType;
 import lombok.Data;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 public class VoucherDTO {
@@ -10,10 +10,8 @@ public class VoucherDTO {
     private String code;
     private Double percent;
     private Double maxDiscount;
-    private LocalDate startDate;
-    private LocalDate endDate;
-
-    // --- Thêm mới ---
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
     private VoucherType type;
     private Double conditionValue;
 }

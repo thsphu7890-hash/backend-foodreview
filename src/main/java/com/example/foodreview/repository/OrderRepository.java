@@ -9,20 +9,23 @@ import java.util.List;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
-    // 1. Tìm đơn hàng theo User ID (Lịch sử khách đặt)
-    List<Order> findByUserId(Long userId);
+    // 1. Cho Khách Hàng (Tìm theo User ID của người đặt)
+    List<Order> findByUserIdOrderByCreatedAtDesc(Long userId);
 
-    // 2. Tìm đơn hàng theo Tên khách (Code cũ của bạn, giữ lại để không lỗi chỗ khác nếu cần)
-    List<Order> findByCustomerNameOrderByCreatedAtDesc(String customerName);
+    // 2. Cho Tài Xế (DRIVER)
+    
+    // A. Tìm đơn chưa có tài xế (driver là null)
+    // JPA tự hiểu driver là một object, IsNull kiểm tra khóa ngoại
+    List<Order> findByStatusAndDriverIsNullOrderByCreatedAtDesc(String status);
 
-    // --- 👇 CÁC HÀM MỚI CHO TÀI XẾ (THÊM VÀO ĐỂ HẾT LỖI ẢNH 1) 👇 ---
-
-    // Tìm đơn "Kèo thơm": Có status cụ thể và CHƯA CÓ tài xế
-    List<Order> findByStatusAndDriverIsNull(String status);
-
-    // Tìm đơn đang giao của tài xế cụ thể
+    // B. Tìm đơn tài xế đang giao
+    // JPA sẽ tự động hiểu "findByDriverId" là tìm theo trường "id" bên trong object "Driver"
     List<Order> findByDriverIdAndStatus(Long driverId, String status);
     
-    // Tìm lịch sử đơn của tài xế
-    List<Order> findByDriverId(Long driverId);
+    // C. Lịch sử đơn của tài xế
+    List<Order> findByDriverIdOrderByCreatedAtDesc(Long driverId);
+    
+    // 3. Cho Admin
+    List<Order> findAllByOrderByCreatedAtDesc();
+  
 }

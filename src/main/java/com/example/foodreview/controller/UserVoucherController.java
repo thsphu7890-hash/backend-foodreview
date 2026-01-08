@@ -13,24 +13,24 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Random; // <--- Cần thêm import này để Random
+import java.util.Map;
+import java.util.Random;
 
 @RestController
 @RequestMapping("/api/user-vouchers")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:5173")
 public class UserVoucherController {
 
     @Autowired private VoucherRepository voucherRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private UserVoucherRepository userVoucherRepository;
 
-    // 1. Lấy danh sách Voucher khả dụng (Săn Voucher)
+    // API này đã được mở public ở SecurityConfig
     @GetMapping("/available")
     public List<Voucher> getAvailableVouchers() {
-        return voucherRepository.findAll(); 
+        return voucherRepository.findAll();
     }
 
-    // 2. Đổi điểm lấy Voucher
     @PostMapping("/exchange")
     public ResponseEntity<?> exchangeVoucher(@RequestParam Long userId, @RequestParam Long voucherId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
@@ -43,51 +43,34 @@ public class UserVoucherController {
             return ResponseEntity.badRequest().body("Bạn không đủ điểm để đổi!");
         }
 
-        // Trừ điểm
         user.setPoints(user.getPoints() - voucher.getConditionValue().intValue());
         userRepository.save(user);
-
-        // Lưu vào ví
         saveUserVoucher(user, voucher);
 
-        return ResponseEntity.ok("Đổi voucher thành công!");
+        return ResponseEntity.ok(Map.of("message", "Đổi voucher thành công!", "newPoints", user.getPoints()));
     }
-    
-    // 3. Lấy ví voucher của tôi
+
     @GetMapping("/my-wallet/{userId}")
     public List<UserVoucher> getMyVouchers(@PathVariable Long userId) {
         return userVoucherRepository.findByUserIdAndIsUsedFalse(userId);
     }
 
-    // --- 👇 PHẦN BẠN ĐANG THIẾU 👇 ---
-
-    // 4. Chơi Game Quay Thưởng
     @PostMapping("/play-game/{userId}")
     public ResponseEntity<?> playGame(@PathVariable Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         
-        // Tỉ lệ trúng thưởng: 30%
-        // Random từ 0-99, nếu nhỏ hơn 30 là trúng
+        // Tỉ lệ trúng 30%
         if (new Random().nextInt(100) < 30) {
-            // Tìm tất cả voucher loại GAME_REWARD
-            List<Voucher> gameVouchers = voucherRepository.findByType(VoucherType.GAME_REWARD);
-            
-            if (!gameVouchers.isEmpty()) {
-                // Chọn ngẫu nhiên 1 voucher trong danh sách quà
-                Voucher prize = gameVouchers.get(new Random().nextInt(gameVouchers.size()));
-                
-                // Lưu voucher trúng được vào ví user
+            List<Voucher> rewards = voucherRepository.findByType(VoucherType.GAME_REWARD);
+            if (!rewards.isEmpty()) {
+                Voucher prize = rewards.get(new Random().nextInt(rewards.size()));
                 saveUserVoucher(user, prize);
-                
-                return ResponseEntity.ok("Chúc mừng! Bạn đã trúng voucher mã: " + prize.getCode());
+                return ResponseEntity.ok(Map.of("success", true, "message", "Chúc mừng! Bạn trúng voucher: " + prize.getCode(), "voucher", prize));
             }
         }
-        
-        return ResponseEntity.ok("Rất tiếc! Chúc bạn may mắn lần sau.");
+        return ResponseEntity.ok(Map.of("success", false, "message", "Chúc bạn may mắn lần sau!"));
     }
 
-    // Hàm phụ để lưu UserVoucher (Code đỡ lặp lại)
     private void saveUserVoucher(User user, Voucher voucher) {
         UserVoucher uv = new UserVoucher();
         uv.setUser(user);

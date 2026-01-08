@@ -3,8 +3,9 @@ package com.example.foodreview.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import com.fasterxml.jackson.annotation.JsonIgnore; // Import cái này để tránh lỗi vòng lặp
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "categories")
@@ -19,9 +20,12 @@ public class Category {
     @Column(nullable = false, unique = true)
     private String name;
 
-    // 👇 THÊM PHẦN NÀY (Tùy chọn) 👇
-    // mappedBy = "category": Tên biến category bên file Food.java
-    @OneToMany(mappedBy = "category")
-    @JsonIgnore // Quan trọng: Ngăn không cho load dữ liệu lặp vô tận (Category -> Food -> Category...)
-    private List<Food> foods;
+    // --- 👇 SỬA LẠI ĐOẠN NÀY 👇 ---
+    
+    // 1. Đổi @OneToMany thành @ManyToMany
+    // 2. Đổi mappedBy = "category" thành "categories" (để khớp với biến bên Food.java)
+    @ManyToMany(mappedBy = "categories")
+    @JsonIgnore 
+    private Set<Food> foods = new HashSet<>(); 
+    // Dùng Set thay vì List để tối ưu cho ManyToMany
 }

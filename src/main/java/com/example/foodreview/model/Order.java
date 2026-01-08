@@ -13,9 +13,9 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Thông tin người đặt (Khách hàng)
+    // 1. NGƯỜI ĐẶT (KHÁCH HÀNG) -> Vẫn giữ là User
     @ManyToOne 
-    @JoinColumn(name = "user_id") // Nên liên kết với bảng User để biết ai đặt
+    @JoinColumn(name = "user_id") 
     private User user; 
     
     private String customerName;
@@ -23,14 +23,15 @@ public class Order {
     private String address;
     private Double totalAmount;
     
-    private String paymentMethod; // "CASH", "BANK_TRANSFER", "MOMO"
-    private String status;        // "PENDING", "CONFIRMED", "SHIPPING", "COMPLETED", "CANCELLED"
+    private String paymentMethod; 
+    private String status;
     
-    // --- 👇 BẠN CẦN THÊM ĐOẠN NÀY CHO MODULE TÀI XẾ 👇 ---
+    // --- 👇 SỬA ĐOẠN NÀY 👇 ---
+    // Thay vì "private User driver", hãy đổi thành "private Driver driver"
     @ManyToOne
     @JoinColumn(name = "driver_id")
-    private User driver; // Lưu thông tin Tài xế nhận đơn
-    // -----------------------------------------------------
+    private Driver driver; 
+    // ---------------------------
 
     private LocalDateTime createdAt;
 

@@ -19,5 +19,6 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
 
     // 3. Tìm danh sách voucher theo loại (Dùng cho Game & Tặng tự động)
     // 👇 BẠN ĐANG THIẾU DÒNG NÀY 👇
+   
     List<Voucher> findByType(VoucherType type);
 }

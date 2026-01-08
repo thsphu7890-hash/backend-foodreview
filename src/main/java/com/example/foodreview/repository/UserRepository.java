@@ -9,10 +9,17 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
+    
+    // Tìm user bằng username
     Optional<User> findByUsername(String username);
+
+    // 👇 QUAN TRỌNG: Phải thêm dòng này thì AuthService mới gọi được .findByEmail()
+    Optional<User> findByEmail(String email);
+    
+    // Kiểm tra tồn tại
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
 
-    // 👇 THÊM DÒNG NÀY: Để tìm tất cả user là "ROLE_DRIVER"
+    // Tìm danh sách theo vai trò
     List<User> findByRole(String role);
 }

@@ -6,7 +6,10 @@ import com.example.foodreview.dto.UserDTO;
 import com.example.foodreview.model.User;
 import com.example.foodreview.repository.UserRepository;
 import com.example.foodreview.mapper.UserMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.server.ResponseStatusException;
 
 import lombok.RequiredArgsConstructor;
@@ -16,59 +19,58 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
 
-    // Đã xóa hằng số DEFAULT_ROLE vì Entity tự lo rồi
-
-    /**
-     * ĐĂNG KÝ TÀI KHOẢN MỚI
-     */
     @Transactional
     public UserDTO register(RegisterRequest request) {
-        // 1. Kiểm tra username
+        log.info("Đang xử lý đăng ký cho user: {}", request.getUsername());
+
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên đăng nhập đã tồn tại!");
         }
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email này đã được sử dụng!");
+        }
 
-        // 2. Map dữ liệu từ Request sang Entity
         User user = userMapper.toEntity(request);
-        
-        // 3. Mã hóa mật khẩu
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        
-        // --- ĐÃ XÓA code setRole và setLocked thủ công ---
-        // Hibernate sẽ tự động gọi @PrePersist trong Entity User để set:
-        // role = "ROLE_USER" và locked = false
+        if (user.getRole() == null || user.getRole().isEmpty()) {
+            user.setRole("ROLE_USER");
+        }
 
-        // 4. Lưu và trả về
         User savedUser = userRepository.save(user);
         return userMapper.toDTO(savedUser);
     }
 
-    /**
-     * ĐĂNG NHẬP
-     */
-    @Transactional(readOnly = true)
+    // --- SỬA LOGIC LOGIN TẠI ĐÂY ---
     public UserDTO login(LoginRequest request) {
-        // 1. Tìm user
+        log.info("Đang xử lý đăng nhập cho username: {}", request.getUsername());
+
+        try {
+            // 1. Xác thực bằng Username + Password
+            authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+            );
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sai tên đăng nhập hoặc mật khẩu");
+        }
+
+        // 2. Tìm User theo Username (Thay vì Email)
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Tài khoản hoặc mật khẩu không chính xác!"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"));
 
-        // 2. Kiểm tra trạng thái khóa (Null-safe)
-        if (Boolean.TRUE.equals(user.getLocked())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tài khoản của bạn đã bị khóa!");
-        }
+        // 3. Tạo Token
+        String token = jwtService.generateToken(user);
+        UserDTO userDTO = userMapper.toDTO(user);
+        userDTO.setToken(token);
 
-        // 3. Kiểm tra mật khẩu
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Tài khoản hoặc mật khẩu không chính xác!");
-        }
-
-        // 4. Trả về kết quả
-        return userMapper.toDTO(user);
+        return userDTO;
     }
 }

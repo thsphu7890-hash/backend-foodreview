@@ -13,5 +13,60 @@
     "name": "cloudinary.cloud_name",
     "type": "java.lang.String",
     "description": "A description for 'cloudinary.cloud_name'"
+  },
+  {
+    "name": "langchain4j.open-ai.chat-model.timeout",
+    "type": "java.lang.String",
+    "description": "A description for 'langchain4j.open-ai.chat-model.timeout'"
+  },
+  {
+    "name": "langchain4j.open-ai.chat-model.log-requests",
+    "type": "java.lang.String",
+    "description": "A description for 'langchain4j.open-ai.chat-model.log-requests'"
+  },
+  {
+    "name": "langchain4j.open-ai.chat-model.log-responses",
+    "type": "java.lang.String",
+    "description": "A description for 'langchain4j.open-ai.chat-model.log-responses'"
+  },
+  {
+    "name": "langchain4j.open-ai.chat-model.temperature",
+    "type": "java.lang.String",
+    "description": "A description for 'langchain4j.open-ai.chat-model.temperature'"
+  },
+  {
+    "name": "langchain4j.open-ai.chat-model.model-name",
+    "type": "java.lang.String",
+    "description": "A description for 'langchain4j.open-ai.chat-model.model-name'"
+  },
+  {
+    "name": "langchain4j.open-ai.chat-model.api-key",
+    "type": "java.lang.String",
+    "description": "A description for 'langchain4j.open-ai.chat-model.api-key'"
+  },
+  {
+    "name": "gemini.api-key",
+    "type": "java.lang.String",
+    "description": "A description for 'gemini.api-key'"
+  },
+  {
+    "name": "gemini.model-name",
+    "type": "java.lang.String",
+    "description": "A description for 'gemini.model-name'"
+  },
+  {
+    "name": "spring.ai.retry.max-attempts",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.ai.retry.max-attempts'"
+  },
+  {
+    "name": "jwt.secret-key",
+    "type": "java.lang.String",
+    "description": "A description for 'jwt.secret-key'"
+  },
+  {
+    "name": "jwt.expiration",
+    "type": "java.lang.String",
+    "description": "A description for 'jwt.expiration'"
   }
 ]}

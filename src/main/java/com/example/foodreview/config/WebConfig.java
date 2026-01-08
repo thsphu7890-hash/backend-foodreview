@@ -6,10 +6,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Mapping đường dẫn ảo /uploads/** vào thư mục thật uploads/
+        // Mở quyền truy cập thư mục uploads
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:uploads/");
     }

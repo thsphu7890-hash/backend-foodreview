@@ -1,14 +1,17 @@
 package com.example.foodreview.service;
 
+import com.example.foodreview.dto.DriverDTO;
 import com.example.foodreview.dto.OrderDTO;
+import com.example.foodreview.mapper.DriverMapper;
 import com.example.foodreview.mapper.OrderMapper;
+import com.example.foodreview.model.Driver;
 import com.example.foodreview.model.Order;
-import com.example.foodreview.model.User;
+import com.example.foodreview.repository.DriverRepository;
 import com.example.foodreview.repository.OrderRepository;
-import com.example.foodreview.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,79 +21,108 @@ import java.util.stream.Collectors;
 public class DriverService {
 
     private final OrderRepository orderRepo;
-    private final UserRepository userRepo;
     private final OrderMapper orderMapper;
+    private final DriverRepository driverRepo;
+    private final DriverMapper driverMapper;
 
-    /**
-     * 1. LẤY DANH SÁCH ĐƠN "CÓ SẴN" (Chưa ai nhận)
-     * Điều kiện: Status = CONFIRMED (Quán đã làm xong) và Shipper = null
-     */
-    public List<OrderDTO> getAvailableOrders() {
-        // Tìm các đơn đã xác nhận và chưa có tài xế
-        List<Order> orders = orderRepo.findAll().stream()
-                .filter(o -> "CONFIRMED".equals(o.getStatus()) && o.getDriver() == null)
+    // Lấy danh sách cho Admin
+    public List<DriverDTO> getAllDrivers() {
+        return driverRepo.findAll().stream()
+                .map(driverMapper::toDTO)
                 .collect(Collectors.toList());
-        
-        return orders.stream().map(orderMapper::toDTO).collect(Collectors.toList());
     }
 
-    /**
-     * 2. TÀI XẾ BẤM "NHẬN ĐƠN"
-     * Quan trọng: Phải dùng @Transactional để tránh 2 tài xế nhận cùng 1 đơn
-     */
-    @Transactional
-    public void acceptOrder(Long orderId, Long driverId) {
-        Order order = orderRepo.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại!"));
-
-        // Kiểm tra kỹ lại lần nữa xem đơn đã có người nhận chưa
-        if (order.getDriver() != null) {
-            throw new RuntimeException("Rất tiếc! Đơn hàng này đã có tài xế khác nhận rồi.");
+    // Đăng ký tài xế
+    public DriverDTO registerDriver(String fullName, String phone, String email, String address,
+                                    String idCard, String vehicle, String license,
+                                    MultipartFile frontImg, MultipartFile backImg) {
+        if (driverRepo.existsByPhone(phone)) {
+            throw new RuntimeException("Số điện thoại này đã được đăng ký!");
         }
 
-        User driver = userRepo.findById(driverId)
-                .orElseThrow(() -> new RuntimeException("Tài xế không tồn tại"));
+        Driver driver = new Driver();
+        driver.setFullName(fullName);
+        driver.setPhone(phone);
+        driver.setEmail(email);
+        driver.setAddress(address);
+        driver.setIdCardNumber(idCard);
+        driver.setVehicleType(vehicle);
+        driver.setLicensePlate(license);
+        
+        // --- QUAN TRỌNG: Mặc định là PENDING để chờ Admin duyệt ---
+        driver.setStatus("PENDING");
 
-        // Gán tài xế và đổi trạng thái
+        // Lưu file ảnh (Giả lập)
+        if (frontImg != null && !frontImg.isEmpty()) driver.setIdCardFrontImage("/uploads/" + frontImg.getOriginalFilename());
+        if (backImg != null && !backImg.isEmpty()) driver.setIdCardBackImage("/uploads/" + backImg.getOriginalFilename());
+
+        Driver savedDriver = driverRepo.save(driver);
+        return driverMapper.toDTO(savedDriver);
+    }
+
+    // Đăng nhập
+    public DriverDTO loginDriver(String phone) {
+        Driver driver = driverRepo.findByPhone(phone)
+                .orElseThrow(() -> new RuntimeException("Số điện thoại chưa đăng ký!"));
+        
+        if ("PENDING".equals(driver.getStatus())) {
+            throw new RuntimeException("Tài khoản đang chờ duyệt. Vui lòng quay lại sau!");
+        }
+        if ("BLOCKED".equals(driver.getStatus())) {
+            throw new RuntimeException("Tài khoản đã bị khóa!");
+        }
+        return driverMapper.toDTO(driver);
+    }
+
+    // Cập nhật trạng thái (Duyệt/Khóa)
+    public void updateStatus(Long driverId, String status) {
+        Driver driver = driverRepo.findById(driverId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài xế"));
+        driver.setStatus(status);
+        driverRepo.save(driver);
+    }
+
+    // Lấy đơn săn
+    public List<OrderDTO> getAvailableOrders() {
+        return orderRepo.findAll().stream()
+                .filter(o -> "CONFIRMED".equals(o.getStatus()) && o.getDriver() == null)
+                .map(orderMapper::toDTO).collect(Collectors.toList());
+    }
+
+    // Nhận đơn
+    @Transactional
+    public void acceptOrder(Long orderId, Long driverId) {
+        Order order = orderRepo.findById(orderId).orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại!"));
+        if (order.getDriver() != null) throw new RuntimeException("Đã có tài xế khác nhận!");
+        
+        Driver driver = driverRepo.findById(driverId).orElseThrow(() -> new RuntimeException("Tài khoản lỗi"));
+        if (!"ACTIVE".equals(driver.getStatus())) throw new RuntimeException("Tài khoản chưa kích hoạt!");
+
         order.setDriver(driver);
-        order.setStatus("SHIPPING"); // Chuyển sang đang giao
+        order.setStatus("SHIPPING");
         orderRepo.save(order);
     }
 
-    /**
-     * 3. LẤY ĐƠN ĐANG GIAO CỦA TÀI XẾ (Chỉ 1 đơn tại 1 thời điểm)
-     */
+    // Lấy đơn hiện tại
     public List<OrderDTO> getCurrentOrder(Long driverId) {
         return orderRepo.findAll().stream()
-                .filter(o -> "SHIPPING".equals(o.getStatus()) 
-                        && o.getDriver() != null 
-                        && o.getDriver().getId().equals(driverId))
-                .map(orderMapper::toDTO)
-                .collect(Collectors.toList());
+                .filter(o -> "SHIPPING".equals(o.getStatus()) && o.getDriver() != null && o.getDriver().getId().equals(driverId))
+                .map(orderMapper::toDTO).collect(Collectors.toList());
     }
 
-    /**
-     * 4. HOÀN THÀNH ĐƠN HÀNG (Giao xong)
-     */
+    // Hoàn thành đơn
     @Transactional
     public void completeOrder(Long orderId) {
-        Order order = orderRepo.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại"));
-        
-        order.setStatus("DELIVERED"); // Hoàn thành
+        Order order = orderRepo.findById(orderId).orElseThrow(() -> new RuntimeException("Lỗi đơn"));
+        order.setStatus("COMPLETED"); // Dùng COMPLETED để khớp với Admin
         orderRepo.save(order);
     }
-    
-    /**
-     * 5. LỊCH SỬ GIAO HÀNG
-     */
+
+    // Lịch sử
     public List<OrderDTO> getHistory(Long driverId) {
          return orderRepo.findAll().stream()
-                .filter(o -> "DELIVERED".equals(o.getStatus()) 
-                        && o.getDriver() != null 
-                        && o.getDriver().getId().equals(driverId))
+                .filter(o -> "COMPLETED".equals(o.getStatus()) && o.getDriver() != null && o.getDriver().getId().equals(driverId))
                 .sorted((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()))
-                .map(orderMapper::toDTO)
-                .collect(Collectors.toList());
+                .map(orderMapper::toDTO).collect(Collectors.toList());
     }
-} 
+}

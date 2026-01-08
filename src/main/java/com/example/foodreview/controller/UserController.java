@@ -1,60 +1,68 @@
 package com.example.foodreview.controller;
 
+import com.example.foodreview.dto.UserDTO;
 import com.example.foodreview.model.User;
 import com.example.foodreview.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.foodreview.mapper.UserMapper; 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize; // 👈 QUAN TRỌNG: Import cái này để phân quyền
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
-import java.util.List;
+import java.util.List; // 👈 QUAN TRỌNG: Import List
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin
+@RequiredArgsConstructor
 public class UserController {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
-    // --- 👇 QUAN TRỌNG: THÊM HÀM NÀY ĐỂ SỬA LỖI 404 👇 ---
-    // Hàm này sẽ chạy khi React gọi GET /api/users
+    // 1. API lấy thông tin Profile của người đang đăng nhập (Code cũ của bạn)
+    @GetMapping("/profile")
+    public ResponseEntity<UserDTO> getMyProfile() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Chưa đăng nhập");
+        }
+
+        String username;
+        Object principal = authentication.getPrincipal();
+        
+        if (principal instanceof UserDetails) {
+            username = ((UserDetails) principal).getUsername();
+        } else {
+            username = principal.toString();
+        }
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy user"));
+
+        return ResponseEntity.ok(userMapper.toDTO(user));
+    }
+
+    // 2. 👇 ĐÂY LÀ HÀM BẠN ĐANG THIẾU (Để sửa lỗi UserManager.jsx)
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        // Trả về tất cả user (cả khách lẫn tài xế) cho Admin xem
-        return ResponseEntity.ok(userRepository.findAll());
-    }
-    // ----------------------------------------------------
-
-    // 1. Lấy danh sách Tài xế (Dành cho tab Drivers riêng nếu cần)
-    @GetMapping("/drivers")
-    public ResponseEntity<List<User>> getAllDrivers() {
-        return ResponseEntity.ok(userRepository.findByRole("ROLE_DRIVER"));
-    }
-    
-    // 2. Lấy danh sách Khách hàng
-    @GetMapping("/customers")
-    public ResponseEntity<List<User>> getAllCustomers() {
-        return ResponseEntity.ok(userRepository.findByRole("ROLE_USER"));
-    }
-
-    // 3. Khóa/Mở khóa tài khoản
-    @PutMapping("/{id}/toggle-lock")
-    public ResponseEntity<?> toggleLock(@PathVariable Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+    @PreAuthorize("hasRole('ADMIN')") // Chỉ cho phép ADMIN truy cập
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
+        // Lấy tất cả user từ database
+        List<User> users = userRepository.findAll();
         
-        // Đảo ngược trạng thái khóa
-        if (user.getLocked() == null) user.setLocked(false);
-        user.setLocked(!user.getLocked());
-        
-        userRepository.save(user);
-        return ResponseEntity.ok(user);
-    }
-    
-    // 4. API Upload Avatar (Thêm cái này để tránh lỗi 404 ở trang Profile)
-    // Nếu bạn chưa làm Service upload thì tạm thời trả về thông báo
-    @PostMapping("/{id}/avatar")
-    public ResponseEntity<?> uploadAvatar(@PathVariable Long id) {
-        return ResponseEntity.ok("Tính năng đang phát triển");
+        // Chuyển đổi sang DTO để trả về Frontend
+        List<UserDTO> userDTOS = users.stream()
+                .map(userMapper::toDTO)
+                .collect(Collectors.toList());
+                
+        return ResponseEntity.ok(userDTOS);
     }
 }
