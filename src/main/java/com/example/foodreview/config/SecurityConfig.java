@@ -32,9 +32,21 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
+                // 1. Các API xác thực (Login/Register) -> Công khai
                 .requestMatchers("/auth/**", "/api/auth/**", "/login", "/register", "/public/**").permitAll()
-                // Cho phép tất cả các method (GET, POST, PUT, DELETE) với Voucher để test không bị 403
+                
+                // 2. === QUAN TRỌNG: Mở quyền xem dữ liệu (Sửa lỗi 403) ===
+                .requestMatchers(
+                    "/api/restaurants/**", 
+                    "/api/foods/**", 
+                    "/api/categories/**",
+                    "/api/reviews/**" // Thêm cái này để xem review không cần login
+                ).permitAll()
+
+                // 3. Voucher -> Công khai
                 .requestMatchers("/api/vouchers/**").permitAll() 
+                
+                // 4. Các API còn lại -> Bắt buộc có Token
                 .anyRequest().authenticated()
             )
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -47,7 +59,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000", "https://fontent-reviewfood.vercel.app"));
+        // Cho phép các domain Frontend gọi vào
+        configuration.setAllowedOrigins(List.of(
+            "http://localhost:5173", 
+            "http://localhost:3000", 
+            "https://fontent-reviewfood.vercel.app",
+            "https://fontent-reviewfood-j45sejm8c-thsphus-projects.vercel.app" // Thêm domain vercel cụ thể của bạn để chắc chắn không lỗi CORS
+        ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
