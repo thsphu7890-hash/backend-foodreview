@@ -3,6 +3,7 @@ package com.example.foodreview.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod; // <--- BỔ SUNG IMPORT NÀY
 
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -32,21 +33,23 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                // 1. Các API xác thực (Login/Register) -> Công khai
+                // 1. Các API xác thực (Login/Register/Public) -> Ai cũng vào được
                 .requestMatchers("/auth/**", "/api/auth/**", "/login", "/register", "/public/**").permitAll()
                 
-                // 2. === QUAN TRỌNG: Mở quyền xem dữ liệu (Sửa lỗi 403) ===
-                .requestMatchers(
-                    "/api/restaurants/**", 
+                // 2. API Voucher -> Mở hoàn toàn (theo yêu cầu của bạn)
+                .requestMatchers("/api/vouchers/**").permitAll()
+
+                // 3. === QUAN TRỌNG: CHỈ CHO PHÉP XEM (GET) ===
+                // Khách vãng lai chỉ được xem danh sách, xem chi tiết.
+                // KHÔNG được phép Thêm/Sửa/Xóa (POST/PUT/DELETE) nếu chưa login.
+                .requestMatchers(HttpMethod.GET, 
                     "/api/foods/**", 
+                    "/api/restaurants/**", 
                     "/api/categories/**",
-                    "/api/reviews/**" // Thêm cái này để xem review không cần login
+                    "/api/reviews/**" 
                 ).permitAll()
 
-                // 3. Voucher -> Công khai
-                .requestMatchers("/api/vouchers/**").permitAll() 
-                
-                // 4. Các API còn lại -> Bắt buộc có Token
+                // 4. Các API còn lại (bao gồm POST/PUT/DELETE foods, restaurants...) -> Bắt buộc có Token
                 .anyRequest().authenticated()
             )
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -64,7 +67,7 @@ public class SecurityConfig {
             "http://localhost:5173", 
             "http://localhost:3000", 
             "https://fontent-reviewfood.vercel.app",
-            "https://fontent-reviewfood-j45sejm8c-thsphus-projects.vercel.app" // Thêm domain vercel cụ thể của bạn để chắc chắn không lỗi CORS
+            "https://fontent-reviewfood-j45sejm8c-thsphus-projects.vercel.app"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
