@@ -47,7 +47,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000", "https://fontent-reviewfood.vercel.app"));
+        configuration.setAllowedOrigins(List.of(
+            "http://localhost:5173",
+            "https://fontent-reviewfood.vercel.app",
+            "https://fontent-reviewfood-cuwixlypb-thsphus-projects.vercel.app", // Thêm dòng này (link trong lỗi của bạn)
+            "*" // HOẶC: Dùng dòng này để cho phép TẤT CẢ (chỉ dùng để test, chạy ổn thì xóa đi)
+        ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
