@@ -1,10 +1,15 @@
 package com.example.foodreview.model;
 
 public enum VoucherType {
-    DISCOUNT,       // Giảm giá thường
+    // 1. Các loại cơ bản
+    DISCOUNT,       // Giảm giá theo % hoặc số tiền
     FREE_SHIP,      // Miễn phí vận chuyển
     
-    // 👇 THÊM 2 CÁI NÀY ĐỂ HẾT LỖI GẠCH ĐỎ Ở CONTROLLER
-    POINT_EXCHANGE, // Voucher đổi điểm
-    GAME_REWARD     // Voucher trúng thưởng game
+    // 2. Các loại đặc biệt (Dùng cho tính năng Game & Đổi điểm)
+    POINT_EXCHANGE, // Voucher đổi từ điểm tích lũy
+    GAME_REWARD,    // Voucher nhận được khi làm nhiệm vụ/chơi game
+    
+    // 3. Loại khác (nếu cần)
+    PERSONAL,       // Voucher riêng tư (chỉ user đó thấy)
+    PUBLIC          // Voucher công khai (ai cũng thấy)
 }

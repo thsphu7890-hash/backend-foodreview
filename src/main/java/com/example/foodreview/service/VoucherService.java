@@ -3,98 +3,110 @@ package com.example.foodreview.service;
 import com.example.foodreview.dto.VoucherDTO;
 import com.example.foodreview.model.Voucher;
 import com.example.foodreview.model.VoucherType;
-import com.example.foodreview.mapper.VoucherMapper;
 import com.example.foodreview.repository.VoucherRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime; // ✅ SỬA: Dùng LocalDateTime để khớp với Entity
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class VoucherService {
 
-    @Autowired
-    private VoucherRepository voucherRepository;
-    
-    @Autowired
-    private VoucherMapper voucherMapper;
+    private final VoucherRepository voucherRepository;
 
-    // 1. Lấy danh sách
+    // 1. Lấy tất cả voucher
     public List<VoucherDTO> getAllVouchers() {
         return voucherRepository.findAll().stream()
-                .map(voucherMapper::toDTO)
+                .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
 
-    // 2. Tạo mới
+    // 2. Tạo mới Voucher
+    @Transactional
     public VoucherDTO createVoucher(VoucherDTO dto) {
         if (voucherRepository.existsByCode(dto.getCode())) {
-            throw new RuntimeException("Mã Voucher đã tồn tại!");
+            throw new RuntimeException("Mã voucher '" + dto.getCode() + "' đã tồn tại!");
         }
         
-        validateVoucherLogic(dto); // Validate
+        // Kiểm tra logic ngày tháng
+        validateVoucherDates(dto.getStartDate(), dto.getEndDate());
 
-        Voucher voucher = voucherMapper.toEntity(dto);
-        // Set mặc định ngày tạo nếu chưa có
-        if (voucher.getStartDate() == null) voucher.setStartDate(LocalDateTime.now());
-        if (voucher.getEndDate() == null) voucher.setEndDate(LocalDateTime.now().plusDays(7)); // Mặc định 7 ngày
+        Voucher voucher = new Voucher();
+        updateEntityFromDto(voucher, dto);
+        voucher.setActive(true); // Mặc định khi tạo mới là kích hoạt
 
         Voucher savedVoucher = voucherRepository.save(voucher);
-        return voucherMapper.toDTO(savedVoucher);
+        return mapToDTO(savedVoucher);
     }
 
-    // 3. Cập nhật
+    // 3. Cập nhật Voucher (Mới nâng cấp để đồng bộ với nút Sửa)
+    @Transactional
     public VoucherDTO updateVoucher(Long id, VoucherDTO dto) {
         Voucher voucher = voucherRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy Voucher"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Voucher với ID: " + id));
 
-        validateVoucherLogic(dto); // Validate
+        // Nếu đổi mã code, phải kiểm tra mã mới có trùng với voucher khác không
+        if (!voucher.getCode().equals(dto.getCode()) && voucherRepository.existsByCode(dto.getCode())) {
+            throw new RuntimeException("Mã voucher mới '" + dto.getCode() + "' đã được sử dụng!");
+        }
 
-        voucherMapper.updateEntityFromDTO(dto, voucher);
+        validateVoucherDates(dto.getStartDate(), dto.getEndDate());
+        updateEntityFromDto(voucher, dto);
+        
+        // Giữ nguyên hoặc cập nhật trạng thái Active nếu DTO có gửi lên
+        if (dto.getActive() != null) {
+            voucher.setActive(dto.getActive());
+        }
+
         Voucher updatedVoucher = voucherRepository.save(voucher);
-        return voucherMapper.toDTO(updatedVoucher);
+        return mapToDTO(updatedVoucher);
     }
 
-    // 4. Xóa
+    // 4. Xóa Voucher
+    @Transactional
     public void deleteVoucher(Long id) {
+        if (!voucherRepository.existsById(id)) {
+            throw new RuntimeException("Voucher không tồn tại!");
+        }
         voucherRepository.deleteById(id);
     }
 
-    // --- 5. CHECK MÃ CHO GIỎ HÀNG ---
-    public VoucherDTO checkVoucherValid(String code) {
-        Voucher voucher = voucherRepository.findByCode(code)
-                .orElseThrow(() -> new RuntimeException("Mã giảm giá không tồn tại!"));
+    // --- CÁC HÀM HỖ TRỢ (HELPER METHODS) ---
 
-        // ✅ SỬA: Dùng LocalDateTime.now()
-        LocalDateTime now = LocalDateTime.now();
-
-        // Kiểm tra ngày bắt đầu
-        if (voucher.getStartDate().isAfter(now)) {
-            throw new RuntimeException("Mã này chưa đến đợt áp dụng!");
-        }
-        // Kiểm tra ngày kết thúc
-        if (voucher.getEndDate().isBefore(now)) {
-            throw new RuntimeException("Mã này đã hết hạn!");
-        }
-
-        return voucherMapper.toDTO(voucher);
+    // Hàm dùng chung để gán dữ liệu từ DTO sang Entity
+    private void updateEntityFromDto(Voucher voucher, VoucherDTO dto) {
+        voucher.setCode(dto.getCode().toUpperCase().trim());
+        voucher.setPercent(dto.getPercent());
+        voucher.setMaxDiscount(dto.getMaxDiscount());
+        voucher.setStartDate(dto.getStartDate() != null ? dto.getStartDate() : LocalDateTime.now());
+        voucher.setEndDate(dto.getEndDate());
+        voucher.setType(dto.getType() != null ? dto.getType() : VoucherType.PUBLIC);
+        voucher.setConditionValue(dto.getConditionValue() != null ? dto.getConditionValue() : 0.0);
     }
 
-    // --- VALIDATE LOGIC ---
-    private void validateVoucherLogic(VoucherDTO dto) {
-        // Kiểm tra loại voucher cần điều kiện đổi
-        if (dto.getType() == VoucherType.POINT_EXCHANGE) {
-            if (dto.getConditionValue() == null || dto.getConditionValue() <= 0) {
-                throw new RuntimeException("Voucher đổi điểm yêu cầu nhập số điểm (Condition Value) > 0!");
-            }
+    // Kiểm tra tính hợp lệ của ngày kết thúc
+    private void validateVoucherDates(LocalDateTime start, LocalDateTime end) {
+        if (end != null && end.isBefore(start != null ? start : LocalDateTime.now())) {
+            throw new RuntimeException("Ngày kết thúc không được trước ngày bắt đầu!");
         }
-        
-        // ✅ SỬA: Nếu không chọn loại, mặc định là DISCOUNT (Giảm giá thường)
-        // (Vì trong Enum chúng ta không có PUBLIC)
-        if (dto.getType() == null) {
-            dto.setType(VoucherType.DISCOUNT);
-        }
+    }
+
+    // Chuyển đổi Entity sang DTO dùng Builder
+    private VoucherDTO mapToDTO(Voucher voucher) {
+        return VoucherDTO.builder()
+                .id(voucher.getId())
+                .code(voucher.getCode())
+                .percent(voucher.getPercent())
+                .maxDiscount(voucher.getMaxDiscount())
+                .startDate(voucher.getStartDate())
+                .endDate(voucher.getEndDate())
+                .type(voucher.getType())
+                .conditionValue(voucher.getConditionValue())
+                .active(voucher.getActive())
+                .build();
     }
 }

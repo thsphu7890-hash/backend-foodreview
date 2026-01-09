@@ -1,10 +1,10 @@
 package com.example.foodreview.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat; // Thêm import này
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -19,19 +19,22 @@ public class Voucher {
     private Long id;
 
     @Column(unique = true, nullable = false)
-    private String code;            // Mã giảm giá
+    private String code;
 
-    // 👇 CÁC TRƯỜNG KHỚP VỚI MAPPER CỦA BẠN
-    private Double percent;         // Phần trăm giảm (VD: 10 = 10%)
-    private Double maxDiscount;     // Giảm tối đa (VD: Giảm 10% nhưng tối đa 50k)
+    private Double percent;
+    private Double maxDiscount;
     
-    private LocalDateTime startDate; // Ngày bắt đầu
-    private LocalDateTime endDate;   // Ngày kết thúc (Thay cho expirationDate cũ)
+    // Định dạng yyyy-MM-dd sẽ tự động khớp với chuỗi từ Frontend
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime startDate; 
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime endDate;
 
     @Enumerated(EnumType.STRING)
-    private VoucherType type;       // Loại voucher
+    private VoucherType type;
 
-    private Double conditionValue;  // Điều kiện (VD: Đơn tối thiểu 200k)
+    private Double conditionValue;
     
-    private Boolean active = true;  // Trạng thái kích hoạt
+    private Boolean active = true;
 }
