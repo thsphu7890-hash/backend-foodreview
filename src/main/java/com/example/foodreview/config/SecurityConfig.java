@@ -3,7 +3,7 @@ package com.example.foodreview.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
+
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -47,12 +47,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-            "http://localhost:5173",
-            "https://fontent-reviewfood.vercel.app",
-            "https://fontent-reviewfood-cuwixlypb-thsphus-projects.vercel.app", // Thêm dòng này (link trong lỗi của bạn)
-            "*" // HOẶC: Dùng dòng này để cho phép TẤT CẢ (chỉ dùng để test, chạy ổn thì xóa đi)
-        ));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000", "https://fontent-reviewfood.vercel.app"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
