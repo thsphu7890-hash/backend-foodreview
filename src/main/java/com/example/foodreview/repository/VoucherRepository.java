@@ -1,7 +1,7 @@
 package com.example.foodreview.repository;
 
 import com.example.foodreview.model.Voucher;
-import com.example.foodreview.model.VoucherType; // <--- Nhớ Import Enum này
+import com.example.foodreview.model.VoucherType; // Quan trọng: Import Enum
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -18,7 +18,6 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
     Optional<Voucher> findByCode(String code);
 
     // 3. Tìm danh sách voucher theo loại (Dùng cho Game & Tặng tự động)
-    // 👇 BẠN ĐANG THIẾU DÒNG NÀY 👇
-   
+    // ✅ Dòng này giúp Controller tìm được quà tặng
     List<Voucher> findByType(VoucherType type);
 }

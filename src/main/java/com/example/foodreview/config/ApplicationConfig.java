@@ -1,6 +1,5 @@
 package com.example.foodreview.config;
 
-import com.example.foodreview.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,20 +12,21 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+// 👇 QUAN TRỌNG: Sửa dòng import này trỏ về .sql
+import com.example.foodreview.repository.UserRepository; 
+
 @Configuration
 @RequiredArgsConstructor
 public class ApplicationConfig {
 
     private final UserRepository userRepository;
 
-    // 1. Chuyển UserDetailsService sang đây
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
-    // 2. Chuyển AuthenticationProvider sang đây
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -35,13 +35,11 @@ public class ApplicationConfig {
         return authProvider;
     }
 
-    // 3. Chuyển AuthenticationManager sang đây
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
-    // 4. Chuyển PasswordEncoder sang đây
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

@@ -1,7 +1,7 @@
 package com.example.foodreview.dto;
 
 import lombok.Data;
-import java.util.List; // Nhớ import List
+import java.util.List;
 
 @Data
 public class FoodDTO {
@@ -12,16 +12,13 @@ public class FoodDTO {
     private String image;
     private String video;
 
+    // Nhà hàng (Vẫn giữ nguyên Many-to-One)
     private Long restaurantId;
     private String restaurantName;
-    
-    // --- 👇 SỬA ĐỔI QUAN TRỌNG CHO MANY-TO-MANY 👇 ---
-    
-    // Thay vì 1 ID, giờ chúng ta nhận một danh sách ID từ Frontend
-    private List<Long> categoryIds; 
-    
-    // Trả về danh sách tên để hiển thị (VD: ["Món chính", "Hải sản"])
-    private List<String> categoryNames;
-    
-    // -------------------------------------------------
+
+    // --- 👇 SỬA ĐỔI QUAN TRỌNG (MANY-TO-MANY) 👇 ---
+    // Trước đây là: private Long categoryId;
+    // Bây giờ phải là List:
+    private List<Long> categoryIds;      // Danh sách ID gửi lên khi Tạo/Sửa
+    private List<String> categoryNames;  // Danh sách Tên trả về để hiển thị
 }

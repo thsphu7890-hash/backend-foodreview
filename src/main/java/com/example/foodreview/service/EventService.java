@@ -2,6 +2,7 @@ package com.example.foodreview.service;
 
 import com.example.foodreview.model.Event;
 import com.example.foodreview.repository.EventRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 // ĐÚNG: Import Category từ model của bạn
-import com.example.foodreview.model.Category; 
+import com.example.foodreview.model.Category;
+import com.example.foodreview.repository.CategoryRepository;
 import com.example.foodreview.dto.CategoryDTO;
 import com.example.foodreview.mapper.CategoryMapper;
-import com.example.foodreview.repository.CategoryRepository;
 import com.example.foodreview.exception.ResourceNotFoundException; // Dùng exception bạn đã tạo
 
 import org.springframework.stereotype.Service;

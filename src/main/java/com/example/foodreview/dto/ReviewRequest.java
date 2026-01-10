@@ -1,21 +1,17 @@
 package com.example.foodreview.dto;
 
 import lombok.Data;
-import java.util.List;
 
 @Data
 public class ReviewRequest {
-    private Long foodId;
-    private Long orderId; // Để check đã mua hàng chưa
+    private Long foodId;    // Đánh giá món nào
     
-    private String comment;
+    // 👇 THÊM TRƯỜNG NÀY (Quan trọng để check lịch sử đơn hàng)
+    private Long orderId;   
     
-    // Điểm thành phần
-    private int tasteRating;
-    private int hygieneRating;
-    private int serviceRating;
-    private int priceRating;
+    private int rating;     // 1 - 5 sao
+    private String comment; // Nội dung
     
-    // Danh sách ảnh upload
-    private List<String> images;
+    // 👇 String image là chuẩn rồi (Khớp với Entity MySQL mới)
+    private String image;   
 }

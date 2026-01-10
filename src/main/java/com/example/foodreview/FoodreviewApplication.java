@@ -2,12 +2,11 @@ package com.example.foodreview;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-// Nếu bạn dùng bản Spring Boot mới, thêm dòng này để tắt warning JSON lúc nãy
-import org.springframework.data.web.config.EnableSpringDataWebSupport;
+// Xóa dòng import EnableJpaRepositories nếu có
 
 @SpringBootApplication
-// Cấu hình fix lỗi warning PageImpl (tùy chọn, nếu bạn muốn console sạch đẹp)
-@EnableSpringDataWebSupport(pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
+// 👇 XÓA BỎ DÒNG @EnableJpaRepositories(...) cũ đi. 
+// Spring Boot sẽ tự động tìm thấy Repository nếu chúng nằm cùng project.
 public class FoodreviewApplication {
 
     public static void main(String[] args) {

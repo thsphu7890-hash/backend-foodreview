@@ -68,5 +68,75 @@
     "name": "jwt.expiration",
     "type": "java.lang.String",
     "description": "A description for 'jwt.expiration'"
+  },
+  {
+    "name": "spring.mongodb.uri",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.mongodb.uri'"
+  },
+  {
+    "name": "\nspring.data.mongodb.auto-index-creatio",
+    "type": "java.lang.String",
+    "description": "A description for '\nspring.data.mongodb.auto-index-creatio'"
+  },
+  {
+    "name": "\nspring.data.mongodb.ur",
+    "type": "java.lang.String",
+    "description": "A description for '\nspring.data.mongodb.ur'"
+  },
+  {
+    "name": "\ngemini.model-nam",
+    "type": "java.lang.String",
+    "description": "A description for '\ngemini.model-nam'"
+  },
+  {
+    "name": "\nspring.ai.retry.max-attempt",
+    "type": "java.lang.String",
+    "description": "A description for '\nspring.ai.retry.max-attempt'"
+  },
+  {
+    "name": "\ngemini.api-ke",
+    "type": "java.lang.String",
+    "description": "A description for '\ngemini.api-ke'"
+  },
+  {
+    "name": "\nspring.data.web.pageable.serialization-mod",
+    "type": "java.lang.String",
+    "description": "A description for '\nspring.data.web.pageable.serialization-mod'"
+  },
+  {
+    "name": "\njwt.secret-ke",
+    "type": "java.lang.String",
+    "description": "A description for '\njwt.secret-ke'"
+  },
+  {
+    "name": "\njwt.expiratio",
+    "type": "java.lang.String",
+    "description": "A description for '\njwt.expiratio'"
+  },
+  {
+    "name": "\nspring.datasource.passwor",
+    "type": "java.lang.String",
+    "description": "A description for '\nspring.datasource.passwor'"
+  },
+  {
+    "name": "\nspring.datasource.driver-class-nam",
+    "type": "java.lang.String",
+    "description": "A description for '\nspring.datasource.driver-class-nam'"
+  },
+  {
+    "name": "\nspring.jpa.show-sq",
+    "type": "java.lang.String",
+    "description": "A description for '\nspring.jpa.show-sq'"
+  },
+  {
+    "name": "\nspring.jpa.properties.hibernate.dialec",
+    "type": "java.lang.String",
+    "description": "A description for '\nspring.jpa.properties.hibernate.dialec'"
+  },
+  {
+    "name": "\nspring.jpa.hibernate.ddl-aut",
+    "type": "java.lang.String",
+    "description": "A description for '\nspring.jpa.hibernate.ddl-aut'"
   }
 ]}

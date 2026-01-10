@@ -4,52 +4,55 @@ import com.example.foodreview.model.User;
 import com.example.foodreview.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.*;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.Optional; // Nhớ import cái này
 
 @Service
 @RequiredArgsConstructor
-public class UserService { // 👈 BƯỚC 1: XÓA 'implements UserDetailsService' ở đây đi là hết gạch đỏ
+public class UserService {
 
     private final UserRepository userRepository;
 
-    // --- Giữ lại các hàm này ---
+    // 1. Lấy tất cả user
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
+
+    // 2. Lấy user theo ID
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy user"));
+    }
+
+    // 3. Khóa / Mở khóa tài khoản
+    public User toggleLockUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        
+        user.setLocked(!user.isLocked()); // Đảo ngược trạng thái
+        
+        return userRepository.save(user);
+    }
     
+    // 4. Cập nhật thông tin User
+    public User updateUser(Long id, User req) {
+        User user = getUserById(id);
+        
+        // Cập nhật các trường (Chỉ cập nhật nếu có dữ liệu gửi lên)
+        if (req.getFullName() != null) user.setFullName(req.getFullName());
+        if (req.getPhone() != null) user.setPhone(req.getPhone());
+        if (req.getAddress() != null) user.setAddress(req.getAddress());
+        if (req.getAvatar() != null) user.setAvatar(req.getAvatar());
+
+        return userRepository.save(user);
+    }
+
+    // 👇 5. THÊM HÀM NÀY ĐỂ REVIEW CONTROLLER GỌI 👇
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
-    }
-
-    public String updateAvatar(Long userId, MultipartFile file) {
-        if (file.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File trống");
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        try {
-            String fileName = "avatar_" + UUID.randomUUID() + "_" + file.getOriginalFilename();
-            Path uploadDir = Paths.get("uploads");
-            if (!Files.exists(uploadDir)) Files.createDirectories(uploadDir);
-            Path destination = uploadDir.resolve(fileName);
-            try (InputStream is = file.getInputStream()) { Files.copy(is, destination, StandardCopyOption.REPLACE_EXISTING); }
-            String fileUrl = "/uploads/" + fileName;
-            user.setAvatar(fileUrl);
-            userRepository.save(user);
-            return fileUrl;
-        } catch (IOException e) { throw new RuntimeException(e); }
-    }
-
-    public User toggleLockUser(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (user.getLocked() == null) user.setLocked(false);
-        user.setLocked(!user.getLocked());
-        return userRepository.save(user);
     }
 }

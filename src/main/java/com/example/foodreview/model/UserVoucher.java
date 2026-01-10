@@ -20,7 +20,6 @@ public class UserVoucher {
     @JoinColumn(name = "voucher_id")
     private Voucher voucher;
 
-    private boolean isUsed = false; // True = Đã xài rồi
-
-    private LocalDate receivedDate; // Ngày nhận được voucher
+    private boolean isUsed = false; // Đã sử dụng chưa
+    private LocalDate receivedDate; // Ngày nhận
 }

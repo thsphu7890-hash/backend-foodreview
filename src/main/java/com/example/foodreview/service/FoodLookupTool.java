@@ -1,10 +1,12 @@
 package com.example.foodreview.service;
 
 import dev.langchain4j.agent.tool.Tool;
-import com.example.foodreview.repository.FoodRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
+
+import com.example.foodreview.repository.FoodRepository;
+
 import java.util.stream.Collectors;
 
 @Component

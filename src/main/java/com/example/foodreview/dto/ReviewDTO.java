@@ -6,32 +6,37 @@ import java.util.List;
 
 @Data
 public class ReviewDTO {
-    private Long id;
+    // 👇 ID kiểu Long để khớp với MySQL
+    private Long id; 
     
-    // --- THÔNG TIN CƠ BẢN ---
-    private String comment;
-    private double rating; // Đổi sang double để hiển thị 4.5
-    private LocalDateTime createdAt;
-
-    // --- LIÊN KẾT ---
+    // Info User
     private Long userId;
     private String username;
-    private String userAvatar; // (Mới) Để hiện avatar người review
+    private String userAvatar;
+
+    // Info Food & Order
     private Long foodId;
-    private String foodName;   // (Mới) Để biết review món gì
+    private String foodName;
+    private Long orderId;
 
-    // --- TÍNH NĂNG NÂNG CẤP (MỚI) ---
-    private List<String> images; // Danh sách ảnh review
-    private Long orderId;        // Mã đơn hàng (Verified Purchase)
+    // Review Content
+    private int rating;
     
-    // Điểm chi tiết
-    private int tasteRating;
-    private int hygieneRating;
-    private int serviceRating;
-    private int priceRating;
+    // 👇 THÊM CÁC TRƯỜNG NÀY ĐỂ HẾT LỖI GẠCH ĐỎ Ở MAPPER
+    private Double tasteRating;
+    private Double hygieneRating;
+    private Double serviceRating;
+    private Double priceRating;
 
-    // Phản hồi từ chủ quán
+    private String comment;
+    
+    // 👇 Frontend cần List để hiển thị ảnh
+    private List<String> images; 
+    
+    // Tương tác
+    private int helpfulCount;
     private String reply;
     private LocalDateTime replyAt;
-    private int helpfulCount;
+    
+    private LocalDateTime createdAt;
 }

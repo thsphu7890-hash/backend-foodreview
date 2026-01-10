@@ -1,17 +1,21 @@
-package com.example.foodreview.repository;
+package com.example.foodreview.repository; // 👈 Gói .sql
 
 import com.example.foodreview.model.Review;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaRepository; // 👈 Dùng JPA cho MySQL
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
-public interface ReviewRepository extends JpaRepository<Review, Long> {
+public interface ReviewRepository extends JpaRepository<Review, Long> { 
+    // 👆 Lưu ý: ID là Long (không phải String)
     
-    // 1. Tìm tất cả review của 1 món ăn (Sắp xếp mới nhất lên đầu)
+    // 1. Lấy danh sách review của món ăn
     List<Review> findByFoodIdOrderByCreatedAtDesc(Long foodId);
+    
+    // 2. Kiểm tra User đã review món này chưa (Tránh spam)
+    boolean existsByUserIdAndFoodId(Long userId, Long foodId);
 
-    // 2. Kiểm tra xem user đã review món này trong đơn hàng này chưa (tránh spam)
+    // 3. 👇 THÊM HÀM NÀY (Để sửa lỗi gạch đỏ trong OrderService)
     boolean existsByOrderIdAndFoodId(Long orderId, Long foodId);
 }

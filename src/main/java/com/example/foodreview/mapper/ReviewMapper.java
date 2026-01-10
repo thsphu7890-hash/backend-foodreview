@@ -1,60 +1,82 @@
 package com.example.foodreview.mapper;
 
 import com.example.foodreview.dto.ReviewDTO;
+import com.example.foodreview.model.Food;
 import com.example.foodreview.model.Review;
+import com.example.foodreview.model.User;
+
+// 👇 SỬA LẠI: Thêm chữ .sql vào đường dẫn import
+import com.example.foodreview.repository.FoodRepository;
+import com.example.foodreview.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import java.util.Collections;
 
 @Component
+@RequiredArgsConstructor
 public class ReviewMapper {
 
-    // 1. Chuyển từ Entity -> DTO (Full Option)
+    private final UserRepository userRepository;
+    private final FoodRepository foodRepository;
+
     public ReviewDTO toDTO(Review review) {
         if (review == null) {
             return null;
         }
 
         ReviewDTO dto = new ReviewDTO();
+        
+        // --- 1. Map các trường cơ bản ---
         dto.setId(review.getId());
         dto.setComment(review.getComment());
         dto.setRating(review.getRating());
         dto.setCreatedAt(review.getCreatedAt());
 
-        // --- MAPPING NÂNG CẤP ---
-        dto.setImages(review.getImages());
+        // Xử lý ảnh: String -> List<String>
+        if (review.getImage() != null && !review.getImage().isEmpty()) {
+            dto.setImages(Collections.singletonList(review.getImage()));
+        }
+
         dto.setOrderId(review.getOrderId());
         dto.setHelpfulCount(review.getHelpfulCount());
         
-        // Điểm chi tiết
+        // Map điểm chi tiết
         dto.setTasteRating(review.getTasteRating());
         dto.setHygieneRating(review.getHygieneRating());
         dto.setServiceRating(review.getServiceRating());
         dto.setPriceRating(review.getPriceRating());
 
-        // Phản hồi
+        // Map phản hồi
         dto.setReply(review.getReply());
         dto.setReplyAt(review.getReplyAt());
 
-        // --- MAP USER (Kèm Avatar) ---
-        if (review.getUser() != null) {
-            dto.setUserId(review.getUser().getId());
-            
-            // Lấy tên hiển thị
-            String displayName = review.getUser().getFullName();
-            if (displayName == null || displayName.isEmpty()) {
-                displayName = review.getUser().getUsername();
+        // --- 2. Lấy thông tin User từ MySQL ---
+        if (review.getUserId() != null) {
+            dto.setUserId(review.getUserId());
+            User user = userRepository.findById(review.getUserId()).orElse(null);
+            if (user != null) {
+                String displayName = (user.getFullName() != null && !user.getFullName().isEmpty()) 
+                                     ? user.getFullName() 
+                                     : user.getUsername();
+                dto.setUsername(displayName);
+                dto.setUserAvatar(user.getAvatar());
+            } else {
+                dto.setUsername("Người dùng không tồn tại");
             }
-            dto.setUsername(displayName);
-            
-            // Lấy Avatar
-            dto.setUserAvatar(review.getUser().getAvatar());
         } else {
-            dto.setUsername("Người dùng ẩn danh");
+            dto.setUsername("Ẩn danh");
         }
 
-        // --- MAP FOOD ---
-        if (review.getFood() != null) {
-            dto.setFoodId(review.getFood().getId());
-            dto.setFoodName(review.getFood().getName());
+        // --- 3. Lấy thông tin Món ăn từ MySQL ---
+        if (review.getFoodId() != null) {
+            dto.setFoodId(review.getFoodId());
+            Food food = foodRepository.findById(review.getFoodId()).orElse(null);
+            if (food != null) {
+                dto.setFoodName(food.getName());
+            } else {
+                dto.setFoodName("Món ăn đã bị xóa");
+            }
         }
 
         return dto;

@@ -27,5 +27,4 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     
     // 3. Cho Admin
     List<Order> findAllByOrderByCreatedAtDesc();
-  
 }
