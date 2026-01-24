@@ -43,9 +43,10 @@ public class SecurityConfig {
                     "/api/categories/**", 
                     "/api/comments/**",
                     "/api/vouchers/**",  
+                    "/api/user-vouchers/**", // Đã thêm dòng này từ bước trước để sửa lỗi 403
                     "/api/reviews/**"  
                 ).permitAll()
-                // Voucher có thể POST công khai (nếu logic của bạn cho phép)
+                // Voucher có thể POST công khai
                 .requestMatchers(HttpMethod.POST, "/api/vouchers/**").permitAll()
                 .anyRequest().authenticated()
             )
@@ -59,10 +60,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // 👇 [QUAN TRỌNG] Đã thêm link Vercel vào danh sách cho phép
-        configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5173",                   // Cho phép Localhost
-            "https://fontent-reviewfood.vercel.app"    // Cho phép Vercel (theo log lỗi của bạn)
+        // 👇 [ĐÃ SỬA ĐOẠN NÀY] Dùng setAllowedOriginPatterns thay vì setAllowedOrigins
+        // Giúp chấp nhận mọi subdomain của Vercel (vd: link preview, link chính...)
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+            "http://localhost:*",              // Chấp nhận mọi port localhost (3000, 5173...)
+            "https://*.vercel.app"             // Chấp nhận TẤT CẢ các link đuôi .vercel.app
         ));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
