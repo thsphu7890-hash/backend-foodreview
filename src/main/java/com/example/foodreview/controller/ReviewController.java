@@ -5,7 +5,7 @@ import com.example.foodreview.dto.ReviewRequest;
 import com.example.foodreview.model.User;
 import com.example.foodreview.service.ReviewService;
 import com.example.foodreview.service.UserService;
-import lombok.RequiredArgsConstructor; // 👇 Dùng cái này thay cho @Autowired
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -16,20 +16,23 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/reviews")
 @CrossOrigin(origins = "http://localhost:5173")
-@RequiredArgsConstructor // 👇 Tự động tạo Constructor cho các biến final
+@RequiredArgsConstructor
 public class ReviewController {
 
     private final ReviewService reviewService;
-    private final UserService userService; 
+    private final UserService userService;
 
-    // 1. Gửi đánh giá mới (POST)
+    // 1. Lấy TẤT CẢ đánh giá (Đây là đoạn code bạn đang thiếu gây ra lỗi 405)
+    @GetMapping
+    public ResponseEntity<List<ReviewDTO>> getAllReviews() {
+        return ResponseEntity.ok(reviewService.getAllReviews());
+    }
+
+    // 2. Gửi đánh giá mới (POST)
     @PostMapping
-    @PreAuthorize("hasRole('USER')") // Chỉ USER mới được đánh giá
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> createReview(@RequestBody ReviewRequest request, Authentication authentication) {
-        // Lấy username người đang đăng nhập
         String username = authentication.getName();
-        
-        // 👇 Lưu ý: UserService phải có hàm findByUsername trả về Optional<User>
         User user = userService.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
@@ -37,7 +40,7 @@ public class ReviewController {
         return ResponseEntity.ok(createdReview);
     }
 
-    // 2. Xem danh sách đánh giá của một món ăn (Public - Ai cũng xem được)
+    // 3. Xem đánh giá theo món ăn
     @GetMapping("/food/{foodId}")
     public ResponseEntity<List<ReviewDTO>> getReviewsByFood(@PathVariable Long foodId) {
         List<ReviewDTO> reviews = reviewService.getReviewsByFoodId(foodId);

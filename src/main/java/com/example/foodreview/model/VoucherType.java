@@ -11,5 +11,6 @@ public enum VoucherType {
     
     // 3. Loại khác (nếu cần)
     PERSONAL,       // Voucher riêng tư (chỉ user đó thấy)
-    PUBLIC          // Voucher công khai (ai cũng thấy)
+    PUBLIC,    // Voucher công khai (ai cũng thấy)
+    REWARD_ORDER
 }

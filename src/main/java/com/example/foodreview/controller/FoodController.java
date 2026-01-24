@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/foods")
+@RequestMapping("/api/food")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*") // Cho phép React gọi API không bị chặn
 public class FoodController {

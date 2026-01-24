@@ -1,6 +1,7 @@
 package com.example.foodreview.config;
 
-import lombok.RequiredArgsConstructor;
+import com.example.foodreview.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -12,14 +13,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-// 👇 QUAN TRỌNG: Sửa dòng import này trỏ về .sql
-import com.example.foodreview.repository.UserRepository; 
-
 @Configuration
-@RequiredArgsConstructor
 public class ApplicationConfig {
 
-    private final UserRepository userRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     @Bean
     public UserDetailsService userDetailsService() {

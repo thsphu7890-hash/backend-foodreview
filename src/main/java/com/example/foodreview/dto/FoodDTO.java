@@ -8,17 +8,14 @@ public class FoodDTO {
     private Long id;
     private String name;
     private Double price;
-    private String description;
     private String image;
+    private String description;
     private String video;
 
-    // Nhà hàng (Vẫn giữ nguyên Many-to-One)
+    // Thông tin nhà hàng
     private Long restaurantId;
     private String restaurantName;
 
-    // --- 👇 SỬA ĐỔI QUAN TRỌNG (MANY-TO-MANY) 👇 ---
-    // Trước đây là: private Long categoryId;
-    // Bây giờ phải là List:
-    private List<Long> categoryIds;      // Danh sách ID gửi lên khi Tạo/Sửa
-    private List<String> categoryNames;  // Danh sách Tên trả về để hiển thị
+    // Danh sách ID danh mục (React gửi lên dạng: [1, 2, 5])
+    private List<Long> categoryIds; 
 }

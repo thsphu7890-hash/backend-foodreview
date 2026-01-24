@@ -1,6 +1,6 @@
 package com.example.foodreview.model;
 
-import com.fasterxml.jackson.annotation.JsonFormat; // Thêm import này
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,14 +24,15 @@ public class Voucher {
     private Double percent;
     private Double maxDiscount;
     
-    // Định dạng yyyy-MM-dd sẽ tự động khớp với chuỗi từ Frontend
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime startDate; 
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime endDate;
 
+    // 👇 SỬA Ở ĐÂY: Thêm length = 50 để tránh lỗi "Data truncated"
     @Enumerated(EnumType.STRING)
+    @Column(name = "type", length = 50) 
     private VoucherType type;
 
     private Double conditionValue;

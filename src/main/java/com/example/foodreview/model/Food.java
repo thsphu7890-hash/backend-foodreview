@@ -6,7 +6,7 @@ import java.util.List;
 
 @Entity
 @Data
-@Table(name = "foods")
+@Table(name = "food")
 public class Food {
 
     @Id
