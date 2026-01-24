@@ -36,15 +36,16 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**", "/uploads/**", "/error").permitAll()
                 
-                // 👇 [QUAN TRỌNG] Thêm vouchers và reviews vào đây để sửa lỗi 403
+                // Các API công khai (GET)
                 .requestMatchers(HttpMethod.GET, 
                     "/api/food/**",       
                     "/api/restaurants/**", 
                     "/api/categories/**", 
                     "/api/comments/**",
-                    "/api/vouchers/**",  // <-- Sửa lỗi 403 Voucher
-                    "/api/reviews/**"    // <-- Tránh lỗi 403 Review sau khi sửa lỗi 405
+                    "/api/vouchers/**",  
+                    "/api/reviews/**"  
                 ).permitAll()
+                // Voucher có thể POST công khai (nếu logic của bạn cho phép)
                 .requestMatchers(HttpMethod.POST, "/api/vouchers/**").permitAll()
                 .anyRequest().authenticated()
             )
@@ -57,8 +58,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Đảm bảo port này trùng với port React của bạn
-        configuration.setAllowedOrigins(List.of("http://localhost:5173")); 
+        
+        // 👇 [QUAN TRỌNG] Đã thêm link Vercel vào danh sách cho phép
+        configuration.setAllowedOrigins(Arrays.asList(
+            "http://localhost:5173",                   // Cho phép Localhost
+            "https://fontent-reviewfood.vercel.app"    // Cho phép Vercel (theo log lỗi của bạn)
+        ));
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
         configuration.setAllowCredentials(true);
