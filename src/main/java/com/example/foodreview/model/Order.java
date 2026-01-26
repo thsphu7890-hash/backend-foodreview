@@ -13,8 +13,7 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 1. NGƯỜI ĐẶT (KHÁCH HÀNG) -> Vẫn giữ là User
-    @ManyToOne 
+    @ManyToOne(fetch = FetchType.EAGER) // Thêm EAGER để lấy luôn thông tin User
     @JoinColumn(name = "user_id") 
     private User user; 
     
@@ -26,12 +25,13 @@ public class Order {
     private String paymentMethod; 
     private String status;
     
-    // --- 👇 SỬA ĐOẠN NÀY 👇 ---
-    // Thay vì "private User driver", hãy đổi thành "private Driver driver"
-    @ManyToOne
-    @JoinColumn(name = "driver_id")
+    // --- SỬA TẠI ĐÂY ---
+    // 1. Dùng Driver thay vì User
+    // 2. Thêm FetchType.EAGER để tránh lỗi "no session"
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "driver_id", referencedColumnName = "id")
     private Driver driver; 
-    // ---------------------------
+    // -------------------
 
     private LocalDateTime createdAt;
 
