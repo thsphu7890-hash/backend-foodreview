@@ -33,7 +33,7 @@ public class Food {
     // 👇 ĐÃ SỬA: Chuyển từ Set sang List để khớp với Service
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
-        name = "food_categories",
+        name = "food_category",
         joinColumns = @JoinColumn(name = "food_id"),
         inverseJoinColumns = @JoinColumn(name = "category_id")
     )
