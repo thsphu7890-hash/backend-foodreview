@@ -1,12 +1,14 @@
 package com.example.foodreview.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import java.util.HashSet;
-import java.util.Set;
+import lombok.Getter;
+import lombok.Setter;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter // Nên dùng @Getter @Setter thay vì @Data cho Entity có quan hệ ManyToMany để tránh lỗi StackOverflow
 @Table(name = "food")
 public class Food {
 
@@ -23,17 +25,17 @@ public class Food {
     private String image; 
     private String video; 
 
-    // Quan hệ với Nhà hàng - Dùng EAGER để tránh lỗi Lazy 500
+    // Quan hệ với Nhà hàng
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "restaurant_id")
     private Restaurant restaurant;
 
-    // Quan hệ với Danh mục
+    // 👇 ĐÃ SỬA: Chuyển từ Set sang List để khớp với Service
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "food_categories",
         joinColumns = @JoinColumn(name = "food_id"),
         inverseJoinColumns = @JoinColumn(name = "category_id")
     )
-    private Set<Category> categories = new HashSet<>();
+    private List<Category> categories = new ArrayList<>(); // Dùng ArrayList thay vì HashSet
 }
