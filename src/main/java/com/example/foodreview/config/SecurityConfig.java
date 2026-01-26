@@ -29,19 +29,10 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                // API Công khai: Cho phép xem món ăn, nhà hàng mà không cần login
                 .requestMatchers("/api/auth/**", "/error", "/uploads/**").permitAll()
+                // Mở cả /api/food và /api/foods để tránh lỗi 403
                 .requestMatchers(HttpMethod.GET, "/api/food/**", "/api/foods/**", "/api/categories/**", "/api/restaurants/**").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                // API cần Login (User/Admin)
-                .requestMatchers("/api/orders/my-orders", "/api/orders/create").authenticated()
-                .requestMatchers("/api/users/profile").authenticated()
-
-                // API Admin & Driver
-                .requestMatchers("/api/orders/**").hasAnyAuthority("ADMIN", "DRIVER")
-                .requestMatchers("/api/users/**").hasAnyAuthority("ADMIN")
-                
                 .anyRequest().authenticated()
             )
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -54,10 +45,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:5173", 
-            "https://fontent-reviewfood*.vercel.app" // Khớp với frontend của bạn
-        ));
+        config.setAllowedOriginPatterns(Arrays.asList("http://localhost:5173", "https://fontent-reviewfood*.vercel.app"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
         config.setAllowCredentials(true);
