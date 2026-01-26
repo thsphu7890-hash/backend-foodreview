@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -19,56 +18,44 @@ public class OrderController {
 
     @Autowired
     private OrderService orderService;
-
     @Autowired
     private UserService userService;
 
-    // --- 1. LẤY LỊCH SỬ CỦA TÔI (User thường dùng) ---
+    // 1. USER: Lấy đơn của mình
     @GetMapping("/my-orders")
     @PreAuthorize("hasAnyRole('USER', 'DRIVER', 'ADMIN')")
-    public ResponseEntity<List<OrderDTO>> getMyOrders(Authentication authentication) {
-        String username = authentication.getName();
-        User user = userService.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        return ResponseEntity.ok(orderService.getOrdersByUser(user.getId()));
+    public ResponseEntity<List<OrderDTO>> getMyOrders() {
+        return ResponseEntity.ok(orderService.getMyOrders());
     }
 
-    // --- 2. XEM CHI TIẾT ---
-    @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('USER', 'DRIVER', 'ADMIN')")
-    public ResponseEntity<?> getOrderById(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(orderService.getOrderById(id));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Không tìm thấy đơn hàng");
-        }
-    }
-
-    // --- 3. TẠO ĐƠN ---
+    // 2. USER: Tạo đơn
     @PostMapping
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<OrderDTO> createOrder(@RequestBody OrderDTO orderRequest, Authentication authentication) {
         String username = authentication.getName();
-        User user = userService.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+        User user = userService.findByUsername(username).orElseThrow();
         orderRequest.setUserId(user.getId());
         return ResponseEntity.ok(orderService.createOrder(orderRequest));
     }
 
-    // --- 4. HỦY ĐƠN ---
-    @PutMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<OrderDTO> cancelOrder(@PathVariable Long id) {
-        return ResponseEntity.ok(orderService.cancelOrder(id));
-    }
-
-    // --- 5. 👇 QUAN TRỌNG: LẤY TẤT CẢ ĐƠN (Dành cho Admin/Manager) ---
-    // Đây là cái bạn đang thiếu!
+    // 3. ADMIN: Lấy tất cả
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'DRIVER')") // Chỉ Admin hoặc Driver mới được xem hết
+    @PreAuthorize("hasAnyRole('ADMIN', 'DRIVER')")
     public ResponseEntity<List<OrderDTO>> getAllOrders() {
         return ResponseEntity.ok(orderService.getAllOrders());
+    }
+    
+    // 4. USER/ADMIN: Xem chi tiết
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'DRIVER', 'ADMIN')")
+    public ResponseEntity<?> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(orderService.getOrderById(id));
+    }
+    
+    // 5. USER: Hủy đơn
+    @PutMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<?> cancel(@PathVariable Long id) {
+        return ResponseEntity.ok(orderService.cancelOrder(id));
     }
 }

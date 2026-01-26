@@ -23,39 +23,41 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String username;
+    private String username; // Dùng cái này để đăng nhập
     private String password;
     private String email;
     private String fullName;
-    private String role;
+    private String role; 
     private String avatar; 
     private String phone;
     private String address;
-
-    // ✅ 1. Điểm tích lũy (Mặc định là 0)
     private int points; 
-
-    // ✅ 2. Trạng thái khóa (Dùng boolean nguyên thủy để xóa cảnh báo vàng)
-    // Mặc định boolean trong Java là false -> Không bị khóa
     private boolean locked; 
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + (role == null ? "USER" : role)));
+        String userRole = (role == null || role.isEmpty()) ? "USER" : role.toUpperCase();
+        // Trả về cả 2 định dạng để dứt điểm lỗi lệch tiền tố ROLE_
+        return List.of(
+            new SimpleGrantedAuthority("ROLE_" + userRole),
+            new SimpleGrantedAuthority(userRole)
+        );
+    }
+
+    @Override
+    public String getUsername() { 
+        return username; // Sửa lại: Trả về field username thực tế
     }
 
     @Override
     public boolean isAccountNonExpired() { return true; }
 
-    // ✅ 3. Logic khóa tài khoản chuẩn
-    // Nếu locked = true -> !locked = false -> Tài khoản bị khóa
     @Override
-    public boolean isAccountNonLocked() { 
-        return !locked; 
-    }
+    public boolean isAccountNonLocked() { return !locked; }
 
     @Override
     public boolean isCredentialsNonExpired() { return true; }
+
     @Override
     public boolean isEnabled() { return true; }
 }
