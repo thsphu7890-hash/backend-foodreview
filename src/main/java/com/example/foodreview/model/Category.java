@@ -20,12 +20,8 @@ public class Category {
     @Column(nullable = false, unique = true)
     private String name;
 
-    // --- 👇 SỬA LẠI ĐOẠN NÀY 👇 ---
-    
-    // 1. Đổi @OneToMany thành @ManyToMany
-    // 2. Đổi mappedBy = "category" thành "categories" (để khớp với biến bên Food.java)
+    // mappedBy trỏ đến biến "categories" trong lớp Food.java
     @ManyToMany(mappedBy = "categories")
     @JsonIgnore 
     private Set<Food> foods = new HashSet<>(); 
-    // Dùng Set thay vì List để tối ưu cho ManyToMany
 }

@@ -2,7 +2,8 @@ package com.example.foodreview.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Data
@@ -14,25 +15,25 @@ public class Food {
     private Long id;
 
     private String name;
+    
+    @Column(columnDefinition = "TEXT")
     private String description;
+    
     private double price;
-    
-    private String image; // Link ảnh
-    
-    // 👇 THÊM DÒNG NÀY ĐỂ HẾT LỖI 👇
-    private String video; // Link video (Youtube/TikTok...)
+    private String image; 
+    private String video; 
 
-    // Quan hệ với Nhà hàng
-    @ManyToOne
+    // Quan hệ với Nhà hàng - Dùng EAGER để tránh lỗi Lazy 500
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "restaurant_id")
     private Restaurant restaurant;
 
     // Quan hệ với Danh mục
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "food_categories",
         joinColumns = @JoinColumn(name = "food_id"),
         inverseJoinColumns = @JoinColumn(name = "category_id")
     )
-    private List<Category> categories;
+    private Set<Category> categories = new HashSet<>();
 }
