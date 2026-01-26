@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList; // Đổi import
+import java.util.List;      // Đổi import
 
 @Entity
 @Table(name = "categories")
@@ -23,5 +23,5 @@ public class Category {
     // mappedBy trỏ đến biến "categories" trong lớp Food.java
     @ManyToMany(mappedBy = "categories")
     @JsonIgnore 
-    private Set<Food> foods = new HashSet<>(); 
+    private List<Food> foods = new ArrayList<>(); // 👇 ĐÃ SỬA: Set -> List
 }
