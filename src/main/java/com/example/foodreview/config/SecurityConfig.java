@@ -29,19 +29,18 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                // 1. API Công khai
+                // API Công khai: Cho phép xem món ăn, nhà hàng mà không cần login
                 .requestMatchers("/api/auth/**", "/error", "/uploads/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/foods/**", "/api/categories/**", "/api/restaurants/**", "/api/events/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/food/**", "/api/foods/**", "/api/categories/**", "/api/restaurants/**").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // 2. API cho User (Sử dụng authenticated() cho các route cá nhân)
+                // API cần Login (User/Admin)
                 .requestMatchers("/api/orders/my-orders", "/api/orders/create").authenticated()
                 .requestMatchers("/api/users/profile").authenticated()
 
-                // 3. API cho Admin & Driver
-                .requestMatchers(HttpMethod.GET, "/api/orders").hasAnyAuthority("ADMIN", "DRIVER", "ROLE_ADMIN", "ROLE_DRIVER")
-                .requestMatchers("/api/orders/**").hasAnyAuthority("ADMIN", "DRIVER", "ROLE_ADMIN", "ROLE_DRIVER")
-                .requestMatchers("/api/users/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
+                // API Admin & Driver
+                .requestMatchers("/api/orders/**").hasAnyAuthority("ADMIN", "DRIVER")
+                .requestMatchers("/api/users/**").hasAnyAuthority("ADMIN")
                 
                 .anyRequest().authenticated()
             )
@@ -55,19 +54,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        
-        // Gộp các domain Vercel bằng Wildcard (*)
         config.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:5173",
-            "http://127.0.0.1:5173",
-            "https://fontent-reviewfood*.vercel.app" 
+            "http://localhost:5173", 
+            "https://fontent-reviewfood*.vercel.app" // Khớp với frontend của bạn
         ));
-        
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
         config.setAllowCredentials(true);
-        config.setMaxAge(3600L);
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
