@@ -13,7 +13,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
 import java.util.Arrays;
 
 @Configuration
@@ -30,18 +29,16 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                // 1. API công khai
+                // 1. API Công khai
                 .requestMatchers("/api/auth/**", "/error", "/uploads/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/foods/**", "/api/categories/**").permitAll()
-                // Rất quan trọng: Cho phép lệnh OPTIONS (Pre-flight) của trình duyệt
+                .requestMatchers(HttpMethod.GET, "/api/foods/**", "/api/categories/**", "/api/restaurants/**", "/api/events/**").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // 2. API dành cho User & Admin (Chỉ cần đăng nhập)
+                // 2. API cho User (Sử dụng authenticated() cho các route cá nhân)
                 .requestMatchers("/api/orders/my-orders", "/api/orders/create").authenticated()
                 .requestMatchers("/api/users/profile").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/orders/{id}").authenticated()
 
-                // 3. API dành riêng cho ADMIN & DRIVER (Trang quản lý)
+                // 3. API cho Admin & Driver
                 .requestMatchers(HttpMethod.GET, "/api/orders").hasAnyAuthority("ADMIN", "DRIVER", "ROLE_ADMIN", "ROLE_DRIVER")
                 .requestMatchers("/api/orders/**").hasAnyAuthority("ADMIN", "DRIVER", "ROLE_ADMIN", "ROLE_DRIVER")
                 .requestMatchers("/api/users/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
@@ -58,10 +55,19 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173"));
+        
+        // Gộp các domain Vercel bằng Wildcard (*)
+        config.setAllowedOriginPatterns(Arrays.asList(
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "https://fontent-reviewfood*.vercel.app" 
+        ));
+        
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
         config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
