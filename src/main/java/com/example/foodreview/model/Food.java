@@ -8,7 +8,7 @@ import java.util.List;
 
 @Entity
 @Getter
-@Setter // Nên dùng @Getter @Setter thay vì @Data cho Entity có quan hệ ManyToMany để tránh lỗi StackOverflow
+@Setter
 @Table(name = "food")
 public class Food {
 
@@ -30,12 +30,12 @@ public class Food {
     @JoinColumn(name = "restaurant_id")
     private Restaurant restaurant;
 
-    // 👇 ĐÃ SỬA: Chuyển từ Set sang List để khớp với Service
+    // --- QUAN TRỌNG: MỐI QUAN HỆ MANY-TO-MANY ---
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "food_category",
         joinColumns = @JoinColumn(name = "food_id"),
         inverseJoinColumns = @JoinColumn(name = "category_id")
     )
-    private List<Category> categories = new ArrayList<>(); // Dùng ArrayList thay vì HashSet
+    private List<Category> categories = new ArrayList<>(); 
 }

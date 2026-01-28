@@ -1,6 +1,8 @@
 package com.example.foodreview.config;
 
 import com.example.foodreview.service.JwtService;
+import io.jsonwebtoken.ExpiredJwtException; // Nhớ import cái này
+import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,18 +34,43 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         
         final String authHeader = request.getHeader("Authorization");
+        final String jwt;
+        final String userEmail;
+
+        // 1. Kiểm tra Header
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        final String jwt = authHeader.substring(7);
-        final String userEmail = jwtService.extractUsername(jwt);
+        jwt = authHeader.substring(7);
 
+        // 2. BẮT LỖI TOKEN HẾT HẠN TẠI ĐÂY (FIX LỖI 500)
+        try {
+            userEmail = jwtService.extractUsername(jwt);
+        } catch (ExpiredJwtException e) {
+            // Nếu token hết hạn -> Trả về 401 ngay lập tức, không cho đi tiếp
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Token expired\", \"message\": \"Phiên đăng nhập hết hạn\"}");
+            return; // Dừng Filter tại đây
+        } catch (MalformedJwtException | IllegalArgumentException e) {
+            // Nếu token sai định dạng (rác)
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("{\"error\": \"Invalid Token\"}");
+            return;
+        } catch (Exception e) {
+            // Lỗi khác -> 500
+            System.err.println("JWT Filter Error: " + e.getMessage());
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            return;
+        }
+
+        // 3. Logic xác thực (Nếu token ngon lành)
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+            
             if (jwtService.isTokenValid(jwt, userDetails)) {
-                // ĐIỂM QUAN TRỌNG: Lấy đúng danh sách quyền đã sửa ở User.java
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,
@@ -53,6 +80,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
+        
         filterChain.doFilter(request, response);
     }
 }

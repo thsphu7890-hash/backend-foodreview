@@ -23,7 +23,9 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String username; // Dùng cái này để đăng nhập
+    @Column(nullable = false, unique = true) // Username không được null và phải duy nhất
+    private String username;
+    
     private String password;
     private String email;
     private String fullName;
@@ -31,13 +33,25 @@ public class User implements UserDetails {
     private String avatar; 
     private String phone;
     private String address;
-    private int points; 
-    private boolean locked; 
+    
+    // --- SỬA Ở ĐÂY: Dùng Integer thay vì int để tránh lỗi Null ---
+    @Builder.Default
+    private Integer points = 0; 
+    
+    // --- SỬA Ở ĐÂY: Dùng Boolean thay vì boolean ---
+    @Builder.Default
+    private Boolean locked = false; 
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        String userRole = (role == null || role.isEmpty()) ? "USER" : role.toUpperCase();
-        // Trả về cả 2 định dạng để dứt điểm lỗi lệch tiền tố ROLE_
+        // Xử lý role rỗng an toàn
+        String userRole = (role == null || role.trim().isEmpty()) ? "USER" : role.toUpperCase();
+        
+        // Nếu role trong DB đã có chữ ROLE_ thì không cộng thêm nữa (Tránh ROLE_ROLE_USER)
+        if (userRole.startsWith("ROLE_")) {
+             userRole = userRole.substring(5);
+        }
+
         return List.of(
             new SimpleGrantedAuthority("ROLE_" + userRole),
             new SimpleGrantedAuthority(userRole)
@@ -46,14 +60,18 @@ public class User implements UserDetails {
 
     @Override
     public String getUsername() { 
-        return username; // Sửa lại: Trả về field username thực tế
+        return username; 
     }
 
+    // Các hàm dưới dùng Boolean.TRUE để tránh null
     @Override
     public boolean isAccountNonExpired() { return true; }
 
     @Override
-    public boolean isAccountNonLocked() { return !locked; }
+    public boolean isAccountNonLocked() { 
+        // Nếu locked là null thì coi như chưa lock (false)
+        return !Boolean.TRUE.equals(locked); 
+    }
 
     @Override
     public boolean isCredentialsNonExpired() { return true; }
