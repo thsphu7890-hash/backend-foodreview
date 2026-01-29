@@ -19,7 +19,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     // B. Tìm theo User ID (Nếu bạn muốn dùng ID thay vì Username)
     // Lưu ý: Phải có dấu gạch dưới "_" (findByUser_Id) để JPA hiểu là tìm ID bên trong User
-    List<Order> findByUser_IdOrderByCreatedAtDesc(Long userId);
+   
 
 
     // =================================================================
@@ -45,4 +45,5 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     
     // Lấy tất cả, mới nhất lên đầu
     List<Order> findAllByOrderByCreatedAtDesc();
+    List<Order> findByUser_IdOrderByCreatedAtDesc(Long userId);
 }
